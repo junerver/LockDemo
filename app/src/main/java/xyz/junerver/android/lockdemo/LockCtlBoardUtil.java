@@ -2,6 +2,12 @@ package xyz.junerver.android.lockdemo;
 
 import android.util.Log;
 
+import com.kongqw.serialportlibrary.SerialPortManager;
+import com.kongqw.serialportlibrary.listener.OnOpenSerialPortListener;
+import com.kongqw.serialportlibrary.listener.OnSerialPortDataListener;
+
+import java.io.File;
+
 /**
  * 门锁控制板工具类
  * 懒加载单例模式，用于控制留样柜门锁的开关、状态查询等操作
@@ -10,6 +16,13 @@ import android.util.Log;
 public class LockCtlBoardUtil {
     private static final String TAG = "LockCtlBoardUtil";
     private static volatile LockCtlBoardUtil instance;
+    private SerialPortManager mSerialPortManager;
+
+    private OnDataReceived mOnDataReceived;
+
+    public interface OnDataReceived {
+        void onDataReceived(String json);
+    }
 
     // 默认门锁总数
     private static final int DEFAULT_LOCK_COUNT = 12;
@@ -35,6 +48,47 @@ public class LockCtlBoardUtil {
         return instance;
     }
 
+    // 打开串口
+    public void openSerialPort() {
+        if (null == mSerialPortManager) {
+            mSerialPortManager = new SerialPortManager();
+        }
+        mSerialPortManager
+                .setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
+                    @Override
+                    public void onSuccess(File device) {
+                        Log.d(TAG, "串口打开成功");
+                    }
+
+                    @Override
+                    public void onFail(File device, Status status) {
+                        Log.e(TAG, "onFail: " + device.getAbsolutePath());
+                    }
+                })
+                .setOnSerialPortDataListener(new OnSerialPortDataListener() {
+
+                    @Override
+                    public void onDataReceived(byte[] bytes) {
+                        String json = LockCtlBoardCmdHelper.parseResponseToJson(bytes);
+                        if (mOnDataReceived != null) {
+                            mOnDataReceived.onDataReceived(json);
+                        }
+                        Log.d(TAG, "onDataReceived: " + json);
+                    }
+
+                    @Override
+                    public void onDataSent(byte[] bytes) {
+
+                    }
+                })
+                .openSerialPort(new File("/dev/ttyS4"), 9600);
+    }
+
+    // 设置串口数据监听器
+    public void setOnDataReceived(OnDataReceived onDataReceived) {
+        this.mOnDataReceived = onDataReceived;
+    }
+
     /**
      * 1. 同时开多锁
      *
@@ -56,10 +110,10 @@ public class LockCtlBoardUtil {
 
         Log.d(TAG, "同时开启门锁: " + java.util.Arrays.toString(lockIds));
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
-        
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "门锁打开完成");
+
         return true;
     }
 
@@ -85,10 +139,10 @@ public class LockCtlBoardUtil {
 
         Log.d(TAG, "门锁 " + lockId + " LED闪烁，持续时间: " + duration + "ms");
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
-        
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "门锁LED闪烁完成");
+
         return true;
     }
 
@@ -113,10 +167,10 @@ public class LockCtlBoardUtil {
 
         Log.d(TAG, "开启门锁: " + lockId);
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
-        
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "门锁打开完成");
+
         return true;
     }
 
@@ -126,26 +180,25 @@ public class LockCtlBoardUtil {
      * @param lockId 门锁ID
      * @return 门锁状态（0-关闭，1-打开，-1-错误）
      */
-    public int getSingleLockStatus(int lockId) {
+    public boolean getSingleLockStatus(int lockId) {
         if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
             Log.e(TAG, "门锁ID无效: " + lockId);
-            return -1;
+            return false;
         }
 
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildGetSingleLockStatusCommand((byte) 0x00, lockId);
         if (command == null) {
             Log.e(TAG, "构造查询单锁状态指令失败");
-            return -1;
+            return false;
         }
 
         Log.d(TAG, "查询门锁状态: " + lockId);
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
-        
-        return 0; // 默认返回关闭状态
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "门锁状态查询完成");
+        return true;
     }
 
     /**
@@ -153,28 +206,21 @@ public class LockCtlBoardUtil {
      *
      * @return 所有门锁状态数组
      */
-    public int[] getAllLocksStatus() {
+    public boolean getAllLocksStatus() {
         Log.d(TAG, "查询所有门锁状态");
-        
+
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand((byte) 0x00);
         if (command == null) {
             Log.e(TAG, "构造查询所有锁状态指令失败");
-            return new int[DEFAULT_LOCK_COUNT];
+            return false;
         }
 
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
-        
-        // 暂时返回全部关闭状态
-        int[] statusArray = new int[DEFAULT_LOCK_COUNT];
-        for (int i = 0; i < DEFAULT_LOCK_COUNT; i++) {
-            statusArray[i] = 0;
-        }
 
-        return statusArray;
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "所有门锁状态查询完成");
+        return true;
     }
 
     /**
@@ -193,22 +239,8 @@ public class LockCtlBoardUtil {
         }
 
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
 
-        // 保留原有的延时逻辑用于演示
-        for (int i = 0; i < DEFAULT_LOCK_COUNT; i++) {
-            // 门锁间添加延时，避免硬件冲突
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Log.e(TAG, "门锁开启延时被中断");
-                return false;
-            }
-        }
-
+        mSerialPortManager.sendBytes(command);
         Log.d(TAG, "所有门锁开启完成");
         return true;
     }
@@ -235,21 +267,8 @@ public class LockCtlBoardUtil {
         }
 
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-        
-        // TODO: 实现串口发送逻辑
-        // TODO: 实现响应接收和验证逻辑
 
-        // 保留原有的延时逻辑用于演示
-        for (int lockId : lockIds) {
-            // 门锁间添加延时，避免硬件冲突
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Log.e(TAG, "门锁开启延时被中断");
-                return false;
-            }
-        }
+        mSerialPortManager.sendBytes(command);
 
         Log.d(TAG, "指定门锁开启完成");
         return true;
