@@ -202,6 +202,30 @@ public class LockCtlBoardCmdHelper {
         return buildCommand(boardAddress, CMD_OPEN_MULTIPLE_SEQUENTIAL, data);
     }
 
+    /**
+     * 8. 通道持续打开指令 (0x88)
+     *
+     * @param boardAddress 板地址
+     * @param channelId    通道ID
+     * @return 指令字节数组
+     */
+    public static byte[] buildChannelKeepOpenCommand(byte boardAddress, int channelId) {
+        byte[] data = {(byte) channelId};
+        return buildCommand(boardAddress, CMD_CHANNEL_KEEP_OPEN, data);
+    }
+
+    /**
+     * 9. 停止通道持续打开指令 (0x89)
+     *
+     * @param boardAddress 板地址
+     * @param channelId    通道ID
+     * @return 指令字节数组
+     */
+    public static byte[] buildCloseChannelCommand(byte boardAddress, int channelId) {
+        byte[] data = {(byte) channelId};
+        return buildCommand(boardAddress, CMD_CLOSE_CHANNEL, data);
+    }
+
     // ==================== JSON响应解析方法 ====================
 
     /**

@@ -57,6 +57,10 @@ class MainActivity : AppCompatActivity() {
     val getAllStatusCommand = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand(boardAddress)
     Log.d("MainActivity", "查询所有门锁状态指令: ${bytesToHex(getAllStatusCommand)}")
 
+    // 示例5: 构造通道持续打开指令 (0x88)
+    val channelKeepOpenCommand = LockCtlBoardCmdHelper.buildChannelKeepOpenCommand(boardAddress, 1)
+    Log.d("MainActivity", "通道1持续打开指令: ${bytesToHex(channelKeepOpenCommand)}")
+
     Log.d("MainActivity", "=== 门锁指令构造测试完成 ===")
   }
 
@@ -114,10 +118,16 @@ class MainActivity : AppCompatActivity() {
     val jsonResult5 = LockCtlBoardCmdHelper.parseResponseToJson(statusUploadResponse)
     Log.d("MainActivity", "状态上传JSON响应: $jsonResult5")
 
+    // 测试数据：通道持续打开响应 (0x88)
+    val channelKeepOpenResponse =
+      byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x88.toByte(), 0x00, 0x02, 0x8A.toByte())
+    val jsonResult6 = LockCtlBoardCmdHelper.parseResponseToJson(channelKeepOpenResponse)
+    Log.d("MainActivity", "通道持续打开JSON响应: $jsonResult6")
+
     // 测试错误响应处理
     val invalidResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x05, 0x00, 0x80.toByte())
-    val jsonResult6 = LockCtlBoardCmdHelper.parseResponseToJson(invalidResponse)
-    Log.d("MainActivity", "无效响应JSON解析结果: $jsonResult6")
+    val jsonResult7 = LockCtlBoardCmdHelper.parseResponseToJson(invalidResponse)
+    Log.d("MainActivity", "无效响应JSON解析结果: $jsonResult7")
 
     Log.d("MainActivity", "=== JSON响应解析测试完成 ===")
   }

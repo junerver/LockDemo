@@ -104,6 +104,28 @@ class ExampleUnitTest {
   }
 
   /**
+   * 测试8: 通道持续打开 (0x88)
+   * Demo: 持续打开0号板的1号通道
+   * 上位机发送: 57 4B 4C 59 09 00 88 01 89
+   */
+  @Test
+  fun testChannelKeepOpen() {
+    val bytes = LockCtlBoardCmdHelper.buildChannelKeepOpenCommand(0x00.toByte(), 1)
+    assertNotNull("通道持续打开指令不应为null", bytes)
+    assertEquals("通道持续打开指令不匹配", "57 4B 4C 59 09 00 88 01 89", bytesToHex(bytes))
+  }
+
+  /**
+   * 测试9: 关闭通道
+   */
+  @Test
+  fun testCloseChannel() {
+    val bytes = LockCtlBoardCmdHelper.buildCloseChannelCommand(0x00.toByte(), 1)
+    assertNotNull("关闭通道指令不应为null", bytes)
+    assertEquals("关闭通道指令不匹配", "57 4B 4C 59 09 00 89 01 88", bytesToHex(bytes))
+  }
+
+  /**
    * 测试不同板地址的指令构造
    */
   @Test
@@ -133,7 +155,8 @@ class ExampleUnitTest {
     assertEquals("空门锁ID数组应返回null", null, emptyLocksCommand)
 
     // 测试null门锁ID数组
-    val nullLocksCommand = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(0x00.toByte(), *intArrayOf())
+    val nullLocksCommand =
+      LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(0x00.toByte(), *intArrayOf())
     assertEquals("null门锁ID数组应返回null", null, nullLocksCommand)
   }
 
@@ -166,7 +189,10 @@ class ExampleUnitTest {
     println("同时开多锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_multiple_locks\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"open_multiple_locks\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含成功消息", jsonResult.contains("成功"))
   }
@@ -181,7 +207,10 @@ class ExampleUnitTest {
     println("通道闪烁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"flash_channel\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"flash_channel\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
   }
@@ -196,11 +225,17 @@ class ExampleUnitTest {
     println("开单锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_single_lock\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"open_single_lock\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
     assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
-    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\": false")) // 0x00表示打开，所以isLocked为false
+    assertTrue(
+      "JSON应包含isLocked字段",
+      jsonResult.contains("\"isLocked\": false")
+    ) // 0x00表示打开，所以isLocked为false
   }
 
   /**
@@ -213,7 +248,10 @@ class ExampleUnitTest {
     println("查询单个门锁状态JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"get_single_lock_status\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"get_single_lock_status\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
     assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
@@ -230,7 +268,10 @@ class ExampleUnitTest {
     println("查询所有门锁状态JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"get_all_locks_status\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"get_all_locks_status\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含channelCount字段", jsonResult.contains("\"channelCount\": 4"))
     assertTrue("JSON应包含channelStatus数组", jsonResult.contains("\"channelStatus\": ["))
@@ -246,10 +287,16 @@ class ExampleUnitTest {
     println("状态上传JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"status_upload\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"status_upload\"")
+    )
     assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
     assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
-    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\": true")) // 0x01表示关闭，所以isLocked为true
+    assertTrue(
+      "JSON应包含isLocked字段",
+      jsonResult.contains("\"isLocked\": true")
+    ) // 0x01表示关闭，所以isLocked为true
   }
 
   /**
@@ -262,7 +309,10 @@ class ExampleUnitTest {
     println("开全部锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_all_locks\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"open_all_locks\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
   }
 
@@ -276,8 +326,51 @@ class ExampleUnitTest {
     println("逐一开多锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_multiple_sequential\""))
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"open_multiple_sequential\"")
+    )
     assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+  }
+
+  /**
+   * 测试JSON格式响应解析 - 通道持续打开 (0x88)
+   */
+  @Test
+  fun testParseChannelKeepOpenJsonResponse() {
+    // 测试数据：0 号板的 1 号通道持续打开
+    // 57 4B 4C 59 0A 00 88 00 01 8A
+    val response = hexToBytes("57 4B 4C 59 0A 00 88 00 01 8A")
+    val jsonResult = LockCtlBoardCmdHelper.parseResponseToJson(response)
+    println("通道持续打开JSON响应: $jsonResult")
+
+    // 验证JSON包含必要字段
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"channel_keep_open\"")
+    )
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
+    assertTrue("JSON应包含成功消息", jsonResult.contains("成功"))
+  }
+
+  /**
+   * 测试JSON格式响应解析 - 通道关闭 (0x89)
+   */
+  @Test
+  fun testParseCloseChannelJsonResponse() {
+    // 测试数据：0 号板的 1 号通道关闭
+    // 57 4B 4C 59 0A 00 89 00 01 8B
+    val response = hexToBytes("57 4B 4C 59 0A 00 89 00 01 8B")
+    val jsonResult = LockCtlBoardCmdHelper.parseResponseToJson(response)
+    println("通道关闭JSON响应: $jsonResult")
+    assertTrue(
+      "JSON应包含commandType字段",
+      jsonResult.contains("\"commandType\": \"close_channel\"")
+    )
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
+    assertTrue("JSON应包含成功消息", jsonResult.contains("成功"))
   }
 
   /**
@@ -307,13 +400,16 @@ class ExampleUnitTest {
     val j2 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0A 00 81 00 01 83"))
     println("2-JSON:     $j2")
 
-    val j3 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0B 00 82 00 01 00 81"))
+    val j3 =
+      LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0B 00 82 00 01 00 81"))
     println("3-JSON:     $j3")
 
-    val j4 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0B 00 83 00 01 00 80"))
+    val j4 =
+      LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0B 00 83 00 01 00 80"))
     println("4-JSON:     $j4")
 
-    val j5 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 22 00 84 00 18 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B7"))
+    val j5 =
+      LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 22 00 84 00 18 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B7"))
     println("5-JSON:     $j5")
 
     val j6 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0A 00 85 01 01 86"))
@@ -324,6 +420,12 @@ class ExampleUnitTest {
 
     val j8 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 09 00 87 00 87"))
     println("8-JSON:     $j8")
+
+    val j9 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0A 00 88 00 01 8A"))
+    println("9-JSON:     $j9")
+
+    val j10 = LockCtlBoardCmdHelper.parseResponseToJson(hexToBytes("57 4B 4C 59 0A 00 89 00 01 8B"))
+    println("10-JSON:     $j10")
   }
 
   /**
