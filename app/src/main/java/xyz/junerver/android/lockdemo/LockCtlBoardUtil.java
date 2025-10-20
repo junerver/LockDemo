@@ -84,6 +84,20 @@ public class LockCtlBoardUtil {
                 .openSerialPort(new File("/dev/ttyS4"), 9600);
     }
 
+    // 关闭串口
+    public void closeSerialPort() {
+        if (null != mSerialPortManager) {
+            mSerialPortManager.closeSerialPort();
+            mSerialPortManager = null;
+            Log.d(TAG, "串口已关闭");
+        }
+    }
+
+    // 检查串口是否已打开
+    public boolean isSerialPortOpen() {
+        return mSerialPortManager != null;
+    }
+
     // 设置串口数据监听器
     public void setOnDataReceived(OnDataReceived onDataReceived) {
         this.mOnDataReceived = onDataReceived;
@@ -271,6 +285,63 @@ public class LockCtlBoardUtil {
         mSerialPortManager.sendBytes(command);
 
         Log.d(TAG, "指定门锁开启完成");
+        return true;
+    }
+
+    /**
+     * 8. 通道持续打开
+     *
+     * @param channelId 通道ID
+     * @param duration  持续时间（毫秒）
+     * @return 操作是否成功
+     */
+    public boolean keepChannelOpen(int channelId, long duration) {
+        if (channelId < 0 || channelId >= DEFAULT_LOCK_COUNT) {
+            Log.e(TAG, "通道ID无效: " + channelId);
+            return false;
+        }
+
+        // 构造指令
+        byte[] command = LockCtlBoardCmdHelper.buildChannelKeepOpenCommand((byte) 0x00, channelId);
+        if (command == null) {
+            Log.e(TAG, "构造通道持续打开指令失败");
+            return false;
+        }
+
+        Log.d(TAG, "通道 " + channelId + " 持续打开，持续时间: " + duration + "ms");
+        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "通道持续打开完成");
+
+        return true;
+    }
+
+    /**
+     * 9. 关闭通道
+     *
+     * @param channelId 通道ID
+     * @return 操作是否成功
+     */
+    public boolean closeChannel(int channelId) {
+        if (channelId < 0 || channelId >= DEFAULT_LOCK_COUNT) {
+            Log.e(TAG, "通道ID无效: " + channelId);
+            return false;
+        }
+
+        // 构造指令
+        byte[] command = LockCtlBoardCmdHelper.buildCloseChannelCommand((byte) 0x00, channelId);
+        if (command == null) {
+            Log.e(TAG, "构造关闭通道指令失败");
+            return false;
+        }
+
+        Log.d(TAG, "关闭通道: " + channelId);
+        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
+
+        mSerialPortManager.sendBytes(command);
+        Log.d(TAG, "通道关闭完成");
+
         return true;
     }
 
