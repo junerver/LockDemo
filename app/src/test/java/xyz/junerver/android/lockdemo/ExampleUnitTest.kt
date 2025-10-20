@@ -2,6 +2,7 @@ package xyz.junerver.android.lockdemo
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -165,6 +166,128 @@ class ExampleUnitTest {
     assertEquals("起始符应正确", "57 4B 4C 59", bytesToHex(customCommand.copyOfRange(0, 4)))
     assertEquals("板地址应正确", 0x01.toByte(), customCommand[5])
     assertEquals("指令字应正确", 0x80.toByte(), customCommand[6])
+  }
+  
+  /**
+   * 测试单字节响应解析 (0x80, 0x86, 0x87)
+   */
+  @Test
+  fun testParseSingleByteResponses() {
+    // 测试同时开多锁响应 (0x80): 57 4B 4C 59 09 00 80 00 80
+    val openMultipleResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x80.toByte(), 0x00, 0x80.toByte())
+    val result1 = LockCtlBoardCmdHelper.parseResponse(openMultipleResponse)
+    assertEquals("同时开多锁成功响应解析正确", "同时开多锁操作状态: 成功 (0x00)", result1)
+    
+    // 测试开全部锁响应 (0x86): 57 4B 4C 59 08 00 86 00 86
+    val openAllResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x86.toByte(), 0x00, 0x86.toByte())
+    val result2 = LockCtlBoardCmdHelper.parseResponse(openAllResponse)
+    assertEquals("开全部锁成功响应解析正确", "开全部锁操作状态: 成功 (0x00)", result2)
+    
+    // 测试逐一开多锁响应 (0x87): 57 4B 4C 59 09 00 87 00 87
+    val openSequentialResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x87.toByte(), 0x00, 0x87.toByte())
+    val result3 = LockCtlBoardCmdHelper.parseResponse(openSequentialResponse)
+    assertEquals("逐一开多锁成功响应解析正确", "逐一开多锁操作状态: 成功 (0x00)", result3)
+  }
+  
+  /**
+   * 测试双字节响应解析 (0x81, 0x88, 0x89)
+   */
+  @Test
+  fun testParseTwoByteResponses() {
+    // 测试通道闪烁响应 (0x81): 57 4B 4C 59 0A 00 81 00 01 83
+    val flashResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x00, 0x01, 0x83.toByte())
+    val result1 = LockCtlBoardCmdHelper.parseResponse(flashResponse)
+    assertEquals("通道闪烁成功响应解析正确", "通道闪烁操作 - 通道1: 成功 (状态: 0x00)", result1)
+    
+    // 测试通道持续打开响应 (0x88): 57 4B 4C 59 0A 00 88 00 02 88
+    val keepOpenResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x88.toByte(), 0x00, 0x02, 0x89.toByte())
+    val result2 = LockCtlBoardCmdHelper.parseResponse(keepOpenResponse)
+    assertEquals("通道持续打开成功响应解析正确", "通道持续打开操作 - 通道2: 成功 (状态: 0x00)", result2)
+    
+    // 测试通道关闭响应 (0x89): 57 4B 4C 59 0A 00 89 00 03 89
+    val closeResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x89.toByte(), 0x00, 0x03, 0x89.toByte())
+    val result3 = LockCtlBoardCmdHelper.parseResponse(closeResponse)
+    assertEquals("通道关闭成功响应解析正确", "通道关闭操作 - 通道3: 成功 (状态: 0x00)", result3)
+  }
+  
+  /**
+   * 测试三字节响应解析 (0x82, 0x83)
+   */
+  @Test
+  fun testParseThreeByteResponses() {
+    // 测试开单锁响应 (0x82): 57 4B 4C 59 0B 00 82 00 05 01 84
+    val openSingleResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0B, 0x00, 0x82.toByte(), 0x00, 0x05, 0x01, 0x84.toByte())
+    val result1 = LockCtlBoardCmdHelper.parseResponse(openSingleResponse)
+    assertEquals("开单锁成功响应解析正确", "开单锁操作 - 通道5: 成功, 锁状态: 关闭 (状态: 0x00, 锁状态: 0x01)", result1)
+    
+    // 测试查询单个门锁状态响应 (0x83): 57 4B 4C 59 0B 00 83 00 07 00 85
+    val getSingleStatusResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0B, 0x00, 0x83.toByte(), 0x00, 0x07, 0x00, 0x86.toByte())
+    val result2 = LockCtlBoardCmdHelper.parseResponse(getSingleStatusResponse)
+    assertEquals("查询单个门锁状态响应解析正确", "查询单个门锁状态 - 通道7: 成功, 锁状态: 打开 (状态: 0x00, 锁状态: 0x00)", result2)
+  }
+  
+  /**
+   * 测试状态上传响应解析 (0x85)
+   */
+  @Test
+  fun testParseStatusUploadResponse() {
+    // 测试状态上传响应 (0x85): 57 4B 4C 59 0A 00 85 02 00 86
+    // 根据协议修正：状态字节 0x00=成功，锁状态 0x00=门打开
+    val statusUploadResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x85.toByte(), 0x02, 0x00, 0x84.toByte())
+    val result = LockCtlBoardCmdHelper.parseResponse(statusUploadResponse)
+    assertEquals("状态上传响应解析正确", "状态上传 - 通道2状态变化: 打开 (通道: 0x02, 状态: 0x00)", result)
+  }
+  
+  /**
+   * 测试查询所有门锁状态响应解析 (0x84)
+   */
+  @Test
+  fun testParseGetAllStatusResponse() {
+    // 测试查询所有门锁状态响应 (0x84): 57 4B 4C 59 0E 00 84 00 04 00 01 01 00 87
+    // 根据协议修正：0x00=门打开，0x01=门关闭
+    // 状态字节：0x00=成功，0x01=失败
+    // 锁状态：0x00=打开，0x01=关闭，0xFF=失败
+    val getAllStatusResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0E, 0x00, 0x84.toByte(), 0x00, 0x04, 0x00, 0x01, 0x01, 0x00, 0x87.toByte())
+    val result = LockCtlBoardCmdHelper.parseResponse(getAllStatusResponse)
+    // 验证解析结果包含所有通道信息
+    assertTrue("解析结果应包含通道总数", result.contains("通道总数: 4"))
+    // 根据修正后的协议：0x00=门打开，0x01=门关闭
+    assertTrue("解析结果应包含通道1状态为打开", result.contains("通道1: 打开"))
+    assertTrue("解析结果应包含通道2状态为关闭", result.contains("通道2: 关闭"))
+    assertTrue("解析结果应包含通道3状态为关闭", result.contains("通道3: 关闭"))
+    assertTrue("解析结果应包含通道4状态为打开", result.contains("通道4: 打开"))
+  }
+  
+  /**
+   * 测试失败响应解析
+   */
+  @Test
+  fun testParseFailureResponses() {
+    // 测试同时开多锁失败响应 (0x80): 57 4B 4C 59 09 00 80 FF 7F
+    val failureResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x80.toByte(), 0xFF.toByte(), 0x7F.toByte())
+    val result = LockCtlBoardCmdHelper.parseResponse(failureResponse)
+    assertEquals("失败响应解析正确", "同时开多锁操作状态: 失败 (0xFF)", result)
+  }
+  
+  /**
+   * 测试无效响应解析
+   */
+  @Test
+  fun testParseInvalidResponses() {
+    // 测试长度不足的响应
+    val shortResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x05, 0x00, 0x80.toByte())
+    val result1 = LockCtlBoardCmdHelper.parseResponse(shortResponse)
+    assertEquals("短响应应返回错误信息", "响应数据格式错误", result1)
+    
+    // 测试错误校验的响应
+    val invalidChecksumResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x80.toByte(), 0x00, 0x00.toByte())
+    val result2 = LockCtlBoardCmdHelper.parseResponse(invalidChecksumResponse)
+    assertEquals("校验错误响应应返回错误信息", "响应数据格式错误", result2)
+    
+    // 测试未知指令字的响应
+    val unknownCommandResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x09, 0x00, 0x99.toByte(), 0x00, 0x99.toByte())
+    val result3 = LockCtlBoardCmdHelper.parseResponse(unknownCommandResponse)
+    assertEquals("未知指令字响应应返回提示信息", "未知指令字: 0x99", result3)
   }
   
   /**
