@@ -1,6 +1,9 @@
 package xyz.junerver.android.lockdemo;
 
 import android.util.Log;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.*;
 
 /**
  * 门锁控制板指令构造辅助工具类
@@ -11,7 +14,7 @@ public class LockCtlBoardCmdHelper {
 
     // 通讯协议常量
     private static final byte[] START_BYTES = {0x57, 0x4B, 0x4C, 0x59}; // 起始符: "W K L Y"
-    
+
     // 指令字常量
     private static final byte CMD_OPEN_MULTIPLE_LOCKS = (byte) 0x80; // 同时开多个锁
     private static final byte CMD_FLASH_CHANNEL = (byte) 0x81;       // 通道闪烁
@@ -23,18 +26,23 @@ public class LockCtlBoardCmdHelper {
     private static final byte CMD_OPEN_MULTIPLE_SEQUENTIAL = (byte) 0x87; // 开多个锁
     private static final byte CMD_CHANNEL_KEEP_OPEN = (byte) 0x88;   // 通道持续打开
     private static final byte CMD_CLOSE_CHANNEL = (byte) 0x89;       // 通道关闭
-    
+
     // 状态字常量
     private static final byte STATUS_SUCCESS = 0x00;          // 执行成功
     private static final byte STATUS_FAILED = (byte) 0xFF;    // 执行失败
-    
+
     // 锁状态常量
     private static final byte LOCK_STATUS_OPEN = 0x00;        // 门打开
     private static final byte LOCK_STATUS_CLOSED = 0x01;      // 门关闭
     private static final byte LOCK_STATUS_ERROR = (byte) 0xFF; // 执行失败
-    
+
     // 默认门锁总数
     private static final int DEFAULT_LOCK_COUNT = 24;
+
+    // Gson实例用于JSON解析
+    private static final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .create();
 
     /**
      * 构造串口通讯指令（通用方法）
@@ -46,43 +54,42 @@ public class LockCtlBoardCmdHelper {
     public static byte[] buildCommand(byte boardAddress, byte command, byte[] data) {
         // 计算数据长度
         int dataLength = (data != null) ? data.length : 0;
-        
+
         // 帧长度 = 起始符(4) + 帧长度(1) + 板地址(1) + 指令字(1) + 数据域(n) + 校验字节(1)
         int frameLength = 4 + 1 + 1 + 1 + dataLength + 1;
-        
-        // 构造指令数组
+
         byte[] commandBytes = new byte[frameLength];
-        int index = 0;
-        
+
         // 1. 起始符
-        System.arraycopy(START_BYTES, 0, commandBytes, index, START_BYTES.length);
-        index += START_BYTES.length;
-        
+        System.arraycopy(START_BYTES, 0, commandBytes, 0, START_BYTES.length);
+
         // 2. 帧长度
-        commandBytes[index++] = (byte) frameLength;
-        
+        commandBytes[4] = (byte) (frameLength & 0xFF);
+
         // 3. 板地址
-        commandBytes[index++] = boardAddress;
-        
+        commandBytes[5] = boardAddress;
+
         // 4. 指令字
-        commandBytes[index++] = command;
-        
+        commandBytes[6] = command;
+
         // 5. 数据域
         if (data != null && data.length > 0) {
-            System.arraycopy(data, 0, commandBytes, index, data.length);
-            index += data.length;
+            System.arraycopy(data, 0, commandBytes, 7, data.length);
         }
-        
-        // 6. 校验字节 (从起始符到数据域最后一个字节的异或值)
-        byte checksum = calculateChecksum(commandBytes, 0, index);
-        commandBytes[index] = checksum;
-        
-        Log.d(TAG, "构造指令: " + bytesToHex(commandBytes));
+
+        // 6. 校验字节 (对整个帧进行XOR校验)
+        byte checksum = calculateChecksum(commandBytes, 0, frameLength - 1);
+        commandBytes[frameLength - 1] = checksum;
+
+        Log.d(TAG, String.format("构造指令: 板地址=0x%02X, 指令=0x%02X, 数据长度=%d",
+                                 boardAddress & 0xFF, command & 0xFF, dataLength));
+        Log.d(TAG, "完整指令: " + bytesToHex(commandBytes));
+
         return commandBytes;
     }
 
     /**
-     * 构造同时开多锁指令
+     * 1. 同时开多锁指令
      * @param boardAddress 板地址
      * @param lockIds 门锁ID数组
      * @return 指令字节数组
@@ -93,8 +100,8 @@ public class LockCtlBoardCmdHelper {
             return null;
         }
 
-        // 数据域: 每个门锁ID占一个字节
-        byte[] data = new byte[lockIds.length + 1];
+        // 数据域: 锁数量 + 锁ID列表
+        byte[] data = new byte[1 + lockIds.length];
         data[0] = (byte) lockIds.length;
         for (int i = 0; i < lockIds.length; i++) {
             data[i + 1] = (byte) lockIds[i];
@@ -104,80 +111,58 @@ public class LockCtlBoardCmdHelper {
     }
 
     /**
-     * 构造通道闪烁指令
+     * 2. 通道闪烁指令
      * @param boardAddress 板地址
      * @param lockId 门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildFlashChannelCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return null;
-        }
-
-        // 根据示例，数据域为1字节: 通道号(1字节)
-        byte[] data = new byte[1];
-        data[0] = (byte) lockId;
-
+        byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_FLASH_CHANNEL, data);
     }
 
     /**
-     * 构造开单锁指令
+     * 3. 开单个锁指令
      * @param boardAddress 板地址
      * @param lockId 门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildOpenSingleLockCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return null;
-        }
-
-        // 数据域: 通道号(1字节)
         byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_OPEN_SINGLE_LOCK, data);
     }
 
     /**
-     * 构造查询单个门锁状态指令
+     * 4. 查询单个门锁状态指令
      * @param boardAddress 板地址
      * @param lockId 门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildGetSingleLockStatusCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return null;
-        }
-
-        // 数据域: 通道号(1字节)
         byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_GET_SINGLE_STATUS, data);
     }
 
     /**
-     * 构造查询所有门锁状态指令
+     * 5. 查询所有门锁状态指令
      * @param boardAddress 板地址
      * @return 指令字节数组
      */
     public static byte[] buildGetAllLocksStatusCommand(byte boardAddress) {
-        // 数据域为空
         return buildCommand(boardAddress, CMD_GET_ALL_STATUS, null);
     }
 
     /**
-     * 构造开全部锁指令
+     * 6. 开全部锁指令
      * @param boardAddress 板地址
      * @return 指令字节数组
      */
     public static byte[] buildOpenAllLocksCommand(byte boardAddress) {
-        // 数据域为空
         return buildCommand(boardAddress, CMD_OPEN_ALL_LOCKS, null);
     }
 
     /**
-     * 构造开多个锁指令 (逐一打开)
+     * 7. 逐一开多锁指令
      * @param boardAddress 板地址
      * @param lockIds 门锁ID数组
      * @return 指令字节数组
@@ -188,8 +173,8 @@ public class LockCtlBoardCmdHelper {
             return null;
         }
 
-        // 数据域: 每个门锁ID占一个字节
-        byte[] data = new byte[lockIds.length + 1];
+        // 数据域: 锁数量 + 锁ID列表
+        byte[] data = new byte[1 + lockIds.length];
         data[0] = (byte) lockIds.length;
         for (int i = 0; i < lockIds.length; i++) {
             data[i + 1] = (byte) lockIds[i];
@@ -198,28 +183,71 @@ public class LockCtlBoardCmdHelper {
         return buildCommand(boardAddress, CMD_OPEN_MULTIPLE_SEQUENTIAL, data);
     }
 
+    // ==================== JSON响应解析方法 ====================
+
+    /**
+     * 解析响应为JSON格式（统一入口）
+     * @param response 响应数据
+     * @return JSON格式的字符串
+     */
+    public static String parseResponseToJson(byte[] response) {
+        if (!validateResponse(response)) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据格式错误"));
+        }
+
+        try {
+            byte command = response[6];
+
+            switch (command) {
+                case CMD_OPEN_MULTIPLE_LOCKS:
+                    return parseOpenMultipleLocksJsonResponse(response);
+                case CMD_FLASH_CHANNEL:
+                    return parseFlashChannelJsonResponse(response);
+                case CMD_OPEN_SINGLE_LOCK:
+                    return parseOpenSingleLockJsonResponse(response);
+                case CMD_GET_SINGLE_STATUS:
+                    return parseGetSingleLockStatusJsonResponse(response);
+                case CMD_GET_ALL_STATUS:
+                    return parseGetAllLocksStatusJsonResponse(response);
+                case CMD_STATUS_UPLOAD:
+                    return parseStatusUploadJsonResponse(response);
+                case CMD_OPEN_ALL_LOCKS:
+                    return parseOpenAllLocksJsonResponse(response);
+                case CMD_OPEN_MULTIPLE_SEQUENTIAL:
+                    return parseOpenMultipleSequentialJsonResponse(response);
+                case CMD_CHANNEL_KEEP_OPEN:
+                    return parseChannelKeepOpenJsonResponse(response);
+                case CMD_CLOSE_CHANNEL:
+                    return parseCloseChannelJsonResponse(response);
+                default:
+                    return gson.toJson(new BaseResponse("unknown_command", -1, "未知指令字: 0x" +
+                                        String.format("%02X", command & 0xFF)));
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "JSON解析响应失败", e);
+            return gson.toJson(new BaseResponse("parse_error", -1, "解析失败: " + e.getMessage()));
+        }
+    }
+
     /**
      * 验证响应数据的完整性
      * @param response 响应数据
      * @return 验证是否通过
      */
-    public static boolean validateResponse(byte[] response) {
+    private static boolean validateResponse(byte[] response) {
         if (response == null || response.length < 6) {
-            System.out.println("响应数据长度不足");
             return false;
         }
 
         // 检查起始符
         if (response.length < START_BYTES.length ||
                 !java.util.Arrays.equals(java.util.Arrays.copyOfRange(response, 0, START_BYTES.length), START_BYTES)) {
-            System.out.println("起始符不匹配");
             return false;
         }
 
         // 检查帧长度
         int frameLength = response[4] & 0xFF;
         if (frameLength != response.length) {
-            System.out.println("帧长度不匹配: 期望 " + frameLength + ", 实际 " + response.length);
             return false;
         }
 
@@ -227,93 +255,166 @@ public class LockCtlBoardCmdHelper {
         byte expectedChecksum = calculateChecksum(response, 0, response.length - 1);
         byte actualChecksum = response[response.length - 1];
 
-        if (expectedChecksum != actualChecksum) {
-            System.out.println("校验字节不匹配: 期望 " + String.format("0x%02X", expectedChecksum) +
-                    ", 实际 " + String.format("0x%02X", actualChecksum));
-            return false;
-        }
-
-        Log.d(TAG, "响应数据验证通过: " + bytesToHex(response));
-        return true;
+        return expectedChecksum == actualChecksum;
     }
 
     /**
-     * 解析响应数据中的状态字节
-     * @param response 响应数据
-     * @return 状态字节 (0x00=成功, 0xFF=失败, 其他=未知)
+     * 解析同时开多锁响应为JSON (0x80)
      */
-    public static byte parseResponseStatus(byte[] response) {
-        if (!validateResponse(response)) {
-            return (byte) 0xFF; // 返回失败状态
-        }
+    private static String parseOpenMultipleLocksJsonResponse(byte[] response) {
+        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
 
-        // 状态字节在数据域的第一个字节位置(起始符4+帧长度1+板地址1+指令字1=7)
-        if (response.length > 7) {
-            byte status = response[7];
-            Log.d(TAG, "响应状态: " + String.format("0x%02X", status) +
-                    (status == STATUS_SUCCESS ? " (成功)" :
-                            status == STATUS_FAILED ? " (失败)" : " (未知)"));
-            return status;
-        }
-
-        Log.e(TAG, "响应数据中未找到状态字节");
-        return (byte) 0xFF;
+        byte status = response[7];
+        String message = String.format("同时开多锁操作%s",
+                           status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new BaseResponse("open_multiple_locks", status & 0xFF, message));
     }
 
     /**
-     * 统一响应解析入口方法
-     * 根据指令字自动选择相应的解析方法
-     * @param response 响应数据
-     * @return 解析结果字符串
+     * 解析通道闪烁响应为JSON (0x81)
      */
-    public static String parseResponse(byte[] response) {
-        if (!validateResponse(response)) {
-            return "响应数据格式错误";
-        }
+    private static String parseFlashChannelJsonResponse(byte[] response) {
+        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
 
-        // 获取指令字(起始符4+帧长度1+板地址1=6)
-        if (response.length < 7) {
-            return "响应数据长度不足";
-        }
-
-        byte command = response[6];
-        
-        switch (command) {
-            case CMD_OPEN_MULTIPLE_LOCKS:  // 0x80
-                return parseOpenMultipleLocksResponse(response);
-            case CMD_FLASH_CHANNEL:        // 0x81
-                return parseFlashChannelResponse(response);
-            case CMD_OPEN_SINGLE_LOCK:     // 0x82
-                return parseOpenSingleLockResponse(response);
-            case CMD_GET_SINGLE_STATUS:    // 0x83
-                return parseGetSingleStatusResponse(response);
-            case CMD_GET_ALL_STATUS:       // 0x84
-                return parseGetAllStatusResponse(response);
-            case CMD_STATUS_UPLOAD:        // 0x85
-                return parseStatusUploadResponse(response);
-            case CMD_OPEN_ALL_LOCKS:       // 0x86
-                return parseOpenAllLocksResponse(response);
-            case CMD_OPEN_MULTIPLE_SEQUENTIAL: // 0x87
-                return parseOpenMultipleSequentialResponse(response);
-            case CMD_CHANNEL_KEEP_OPEN:    // 0x88
-                return parseChannelKeepOpenResponse(response);
-            case CMD_CLOSE_CHANNEL:        // 0x89
-                return parseCloseChannelResponse(response);
-            default:
-                return "未知指令字: " + String.format("0x%02X", command);
-        }
+        byte status = response[7];
+        byte channel = response[8];
+        String message = String.format("通道%d闪烁操作%s",
+                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new ChannelResponse("flash_channel", status & 0xFF, channel & 0xFF, message));
     }
 
     /**
-     * 计算校验字节 (XOR)
-     * @param data 字节数组
-     * @param start 起始位置
-     * @param end 结束位置 (不包含)
-     * @return XOR校验值
+     * 解析开单锁响应为JSON (0x82)
      */
-    private static byte calculateChecksum(byte[] data, int start, int end) {
+    private static String parseOpenSingleLockJsonResponse(byte[] response) {
+        if (response.length < 10) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        byte channel = response[8];
+        byte lockStatus = response[9];
+
+        String message = String.format("通道%d开锁%s，锁状态：%s",
+                           channel & 0xFF,
+                           status == STATUS_SUCCESS ? "成功" : "失败",
+                           lockStatus == LOCK_STATUS_OPEN ? "打开" :
+                           lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
+
+        return gson.toJson(new LockStatusResponse("open_single_lock", status & 0xFF,
+                                   channel & 0xFF, lockStatus & 0xFF, message));
+    }
+
+    /**
+     * 解析查询单个门锁状态响应为JSON (0x83)
+     */
+    private static String parseGetSingleLockStatusJsonResponse(byte[] response) {
+        if (response.length < 10) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        byte channel = response[8];
+        byte lockStatus = response[9];
+
+        String message = String.format("查询通道%d状态%s，锁状态：%s",
+                           channel & 0xFF,
+                           status == STATUS_SUCCESS ? "成功" : "失败",
+                           lockStatus == LOCK_STATUS_OPEN ? "打开" :
+                           lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
+
+        return gson.toJson(new LockStatusResponse("get_single_lock_status", status & 0xFF,
+                                   channel & 0xFF, lockStatus & 0xFF, message));
+    }
+
+    /**
+     * 解析查询所有门锁状态响应为JSON (0x84)
+     */
+    private static String parseGetAllLocksStatusJsonResponse(byte[] response) {
+        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        byte channelCount = response[8];
+
+        java.util.List<ChannelStatus> channelStatusList = new java.util.ArrayList<>();
+
+        // 解析每个通道的状态
+        for (int i = 0; i < channelCount && (9 + i) < response.length; i++) {
+            byte lockStatus = response[9 + i];
+            channelStatusList.add(new ChannelStatus(i + 1, lockStatus & 0xFF));
+        }
+
+        return gson.toJson(new AllLocksStatusResponse(status & 0xFF, channelCount & 0xFF, channelStatusList));
+    }
+
+    /**
+     * 解析状态上传响应为JSON (0x85)
+     */
+    private static String parseStatusUploadJsonResponse(byte[] response) {
+        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte channel = response[7];
+        byte lockStatus = response[8];
+
+        return gson.toJson(new StatusUploadResponse(channel & 0xFF, lockStatus & 0xFF));
+    }
+
+    /**
+     * 解析开全部锁响应为JSON (0x86)
+     */
+    private static String parseOpenAllLocksJsonResponse(byte[] response) {
+        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        String message = String.format("开全部锁操作%s",
+                           status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new BaseResponse("open_all_locks", status & 0xFF, message));
+    }
+
+    /**
+     * 解析逐一开多锁响应为JSON (0x87)
+     */
+    private static String parseOpenMultipleSequentialJsonResponse(byte[] response) {
+        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        String message = String.format("逐一开多锁操作%s",
+                           status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new BaseResponse("open_multiple_sequential", status & 0xFF, message));
+    }
+
+    /**
+     * 解析通道持续打开响应为JSON (0x88)
+     */
+    private static String parseChannelKeepOpenJsonResponse(byte[] response) {
+        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        byte channel = response[8];
+        String message = String.format("通道%d持续打开操作%s",
+                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new ChannelResponse("channel_keep_open", status & 0xFF, channel & 0xFF, message));
+    }
+
+    /**
+     * 解析通道关闭响应为JSON (0x89)
+     */
+    private static String parseCloseChannelJsonResponse(byte[] response) {
+        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+
+        byte status = response[7];
+        byte channel = response[8];
+        String message = String.format("通道%d关闭操作%s",
+                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+        return gson.toJson(new ChannelResponse("close_channel", status & 0xFF, channel & 0xFF, message));
+    }
+
+    /**
+     * 计算校验字节 (XOR校验)
+     * @param data 数据
+     * @param offset 起始位置
+     * @param length 结束位置(不包含)
+     * @return 校验字节
+     */
+    private static byte calculateChecksum(byte[] data, int offset, int length) {
         byte checksum = 0;
-        for (int i = start; i < end; i++) {
+        for (int i = offset; i < length; i++) {
             checksum ^= data[i];
         }
         return checksum;
@@ -334,231 +435,4 @@ public class LockCtlBoardCmdHelper {
         }
         return hexString.toString().trim();
     }
-
-    /**
-     * 解析同时开多锁响应 (0x80)
-     * 数据域: 状态字节(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseOpenMultipleLocksResponse(byte[] response) {
-        byte status = parseResponseStatus(response);
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("同时开多锁操作状态: %s (0x%02X)", statusText, status);
-    }
-
-    /**
-     * 解析开全部锁响应 (0x86)
-     * 数据域: 状态字节(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseOpenAllLocksResponse(byte[] response) {
-        byte status = parseResponseStatus(response);
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("开全部锁操作状态: %s (0x%02X)", statusText, status);
-    }
-
-    /**
-     * 解析逐一开多锁响应 (0x87)
-     * 数据域: 状态字节(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseOpenMultipleSequentialResponse(byte[] response) {
-        byte status = parseResponseStatus(response);
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("逐一开多锁操作状态: %s (0x%02X)", statusText, status);
-    }
-
-    /**
-     * 解析通道闪烁响应 (0x81)
-     * 数据域: 状态字节(1字节) + 通道号(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseFlashChannelResponse(byte[] response) {
-        if (response.length < 9) { // 起始符4+帧长度1+板地址1+指令字1+数据域2=9
-            return "通道闪烁响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channel = response[8];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("通道闪烁操作 - 通道%d: %s (状态: 0x%02X)", 
-                             channel & 0xFF, statusText, status);
-    }
-
-    /**
-     * 解析开单锁响应 (0x82)
-     * 数据域: 状态字节(1字节) + 通道号(1字节) + 锁状态(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseOpenSingleLockResponse(byte[] response) {
-        if (response.length < 10) { // 起始符4+帧长度1+板地址1+指令字1+数据域3=10
-            return "开单锁响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channel = response[8];
-        byte lockStatus = response[9];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        String lockStatusText = lockStatus == LOCK_STATUS_OPEN ? "打开" : 
-                               lockStatus == LOCK_STATUS_CLOSED ? "关闭" : 
-                               lockStatus == LOCK_STATUS_ERROR ? "执行失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("开单锁操作 - 通道%d: %s, 锁状态: %s (状态: 0x%02X, 锁状态: 0x%02X)", 
-                             channel & 0xFF, statusText, lockStatusText, status, lockStatus);
-    }
-
-    /**
-     * 解析查询单个门锁状态响应 (0x83)
-     * 数据域: 状态字节(1字节) + 通道号(1字节) + 锁状态(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseGetSingleStatusResponse(byte[] response) {
-        if (response.length < 10) {
-            return "查询单个门锁状态响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channel = response[8];
-        byte lockStatus = response[9];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        String lockStatusText = lockStatus == LOCK_STATUS_OPEN ? "打开" : 
-                               lockStatus == LOCK_STATUS_CLOSED ? "关闭" : 
-                               lockStatus == LOCK_STATUS_ERROR ? "执行失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("查询单个门锁状态 - 通道%d: %s, 锁状态: %s (状态: 0x%02X, 锁状态: 0x%02X)", 
-                             channel & 0xFF, statusText, lockStatusText, status, lockStatus);
-    }
-
-    /**
-     * 解析查询所有门锁状态响应 (0x84)
-     * 数据域: 状态字节(1字节) + 通道总数(1字节) + 锁状态(n字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseGetAllStatusResponse(byte[] response) {
-        if (response.length < 9) {
-            return "查询所有门锁状态响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channelCount = response[8];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        StringBuilder result = new StringBuilder();
-        result.append(String.format("查询所有门锁状态: %s, 通道总数: %d\n", statusText, channelCount & 0xFF));
-        
-        // 解析每个通道的锁状态
-        int expectedLockCount = channelCount & 0xFF;
-        int actualLockCount = Math.min(expectedLockCount, response.length - 9);
-        
-        for (int i = 0; i < actualLockCount; i++) {
-            byte lockStatus = response[9 + i];
-            String lockStatusText = lockStatus == LOCK_STATUS_OPEN ? "打开" : 
-                                   lockStatus == LOCK_STATUS_CLOSED ? "关闭" : 
-                                   lockStatus == LOCK_STATUS_ERROR ? "执行失败" : "未知";
-            result.append(String.format("  通道%d: %s (0x%02X)\n", i+1, lockStatusText, lockStatus));
-        }
-        
-        if (actualLockCount < expectedLockCount) {
-            result.append(String.format("  警告: 预期%d个通道状态，但只收到%d个\n", expectedLockCount, actualLockCount));
-        }
-        
-        // TODO: 未来可以根据业务需求返回结构化数据而非字符串
-        return result.toString().trim();
-    }
-
-    /**
-     * 解析状态上传响应 (0x85)
-     * 数据域: 通道号(1字节) + 锁状态(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseStatusUploadResponse(byte[] response) {
-        if (response.length < 9) {
-            return "状态上传响应数据长度不足";
-        }
-
-        byte channel = response[7];
-        byte lockStatus = response[8];
-        
-        String lockStatusText = lockStatus == LOCK_STATUS_OPEN ? "打开" : 
-                               lockStatus == LOCK_STATUS_CLOSED ? "关闭" : 
-                               lockStatus == LOCK_STATUS_ERROR ? "执行失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("状态上传 - 通道%d状态变化: %s (通道: 0x%02X, 状态: 0x%02X)", 
-                             channel & 0xFF, lockStatusText, channel, lockStatus);
-    }
-
-    /**
-     * 解析通道持续打开响应 (0x88)
-     * 数据域: 状态字节(1字节) + 通道号(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseChannelKeepOpenResponse(byte[] response) {
-        if (response.length < 9) {
-            return "通道持续打开响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channel = response[8];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("通道持续打开操作 - 通道%d: %s (状态: 0x%02X)", 
-                             channel & 0xFF, statusText, status);
-    }
-
-    /**
-     * 解析通道关闭响应 (0x89)
-     * 数据域: 状态字节(1字节) + 通道号(1字节)
-     * @param response 响应数据
-     * @return 解析结果字符串
-     */
-    private static String parseCloseChannelResponse(byte[] response) {
-        if (response.length < 9) {
-            return "通道关闭响应数据长度不足";
-        }
-
-        byte status = response[7];
-        byte channel = response[8];
-        
-        String statusText = status == STATUS_SUCCESS ? "成功" : 
-                           status == STATUS_FAILED ? "失败" : "未知";
-        
-        // TODO: 未来可以根据业务需求返回更详细的信息
-        return String.format("通道关闭操作 - 通道%d: %s (状态: 0x%02X)", 
-                             channel & 0xFF, statusText, status);
-    }
-
 }
