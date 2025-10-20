@@ -7,6 +7,9 @@ import com.kongqw.serialportlibrary.listener.OnOpenSerialPortListener;
 import com.kongqw.serialportlibrary.listener.OnSerialPortDataListener;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * 门锁控制板工具类
@@ -21,7 +24,7 @@ public class LockCtlBoardUtil {
     private OnDataReceived mOnDataReceived;
 
     // 数据缓冲区，用于处理分包数据
-    private final java.util.List<Byte> dataBuffer = new java.util.ArrayList<>();
+    private final List<Byte> dataBuffer = new ArrayList<>();
 
     public interface OnDataReceived {
         void onDataReceived(String json);
@@ -150,7 +153,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "同时开启门锁: " + java.util.Arrays.toString(lockIds));
+        Log.d(TAG, "同时开启门锁: " + Arrays.toString(lockIds));
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
 
         mSerialPortManager.sendBytes(command);
@@ -163,7 +166,6 @@ public class LockCtlBoardUtil {
      * 2. 锁通道LED闪烁
      *
      * @param lockId   门锁ID
-     * @param duration 闪烁持续时间（毫秒）
      * @return 操作是否成功
      */
     public boolean flashLockLed(int lockId) {
@@ -299,7 +301,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "开始逐一开启门锁: " + java.util.Arrays.toString(lockIds));
+        Log.d(TAG, "开始逐一开启门锁: " + Arrays.toString(lockIds));
 
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildOpenMultipleSequentialCommand((byte) 0x00, lockIds);

@@ -5,6 +5,10 @@ import android.util.Log;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.AllLocksStatusResponse;
 import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.BaseResponse;
 import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelResponse;
@@ -285,7 +289,7 @@ public class LockCtlBoardCmdHelper {
 
         // 检查起始符
         if (response.length < START_BYTES.length ||
-                !java.util.Arrays.equals(java.util.Arrays.copyOfRange(response, 0, START_BYTES.length), START_BYTES)) {
+                !Arrays.equals(Arrays.copyOfRange(response, 0, START_BYTES.length), START_BYTES)) {
             return false;
         }
 
@@ -376,7 +380,7 @@ public class LockCtlBoardCmdHelper {
         byte status = response[7];
         byte channelCount = response[8];
 
-        java.util.List<ChannelStatus> channelStatusList = new java.util.ArrayList<>();
+        List<ChannelStatus> channelStatusList = new ArrayList<>();
 
         // 解析每个通道的状态
         for (int i = 0; i < channelCount && (9 + i) < response.length; i++) {

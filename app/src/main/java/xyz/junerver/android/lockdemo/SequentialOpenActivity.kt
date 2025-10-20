@@ -9,6 +9,9 @@ import android.widget.GridLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SequentialOpenActivity : AppCompatActivity() {
   private lateinit var lockCtl: LockCtlBoardUtil
@@ -167,8 +170,8 @@ class SequentialOpenActivity : AppCompatActivity() {
   }
 
   private fun appendResponseData(data: String) {
-    val timestamp = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault())
-      .format(java.util.Date())
+    val timestamp = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+      .format(Date())
     responseLog.append("[$timestamp] $data\n")
 
     // 限制日志长度

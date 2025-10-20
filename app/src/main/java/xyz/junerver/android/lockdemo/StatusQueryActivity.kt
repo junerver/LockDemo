@@ -14,6 +14,9 @@ import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
 import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelStatus
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class StatusQueryActivity : AppCompatActivity() {
   private lateinit var lockCtl: LockCtlBoardUtil
@@ -230,8 +233,8 @@ class StatusQueryActivity : AppCompatActivity() {
   }
 
   private fun appendRawResponseData(data: String) {
-    val timestamp = java.text.SimpleDateFormat("HH:mm:ss.SSS", java.util.Locale.getDefault())
-      .format(java.util.Date())
+    val timestamp = SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault())
+      .format(Date())
     val logEntry = "[$timestamp] $data\n"
 
     // 限制显示长度
