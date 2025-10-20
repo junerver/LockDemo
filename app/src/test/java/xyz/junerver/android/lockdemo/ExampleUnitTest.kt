@@ -298,4 +298,39 @@ class ExampleUnitTest {
     
     return bytes.joinToString(" ") { String.format("%02X", it) }
   }
+
+  // 16进制转成字节数组，忽略空格、大小写
+  private fun hexToBytes(hex: String): ByteArray {
+    // 移除所有空格并转为大写（便于统一处理）
+    val cleanHex = hex.replace("\\s+".toRegex(), "").uppercase()
+
+    // 检查长度是否为偶数
+    require(cleanHex.length % 2 == 0) { "Invalid hex string length: must be even" }
+
+    // 每两个字符解析为一个字节
+    return ByteArray(cleanHex.length / 2) { i ->
+      cleanHex.substring(i * 2, i * 2 + 2).toInt(16).toByte()
+    }
+  }
+
+  @Test
+  fun testDocDemo() {
+    val r1 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 09 00 80 00 80"))
+    println("1:  $r1")
+    val r2 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 0A 00 81 00 01 83"))
+    println("2:  $r2")
+    val r3 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 0B 00 82 00 01 00 81"))
+    println("3:  $r3")
+    val r4 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 0B 00 83 00 01 00 80"))
+    println("4:  $r4")
+    val r5 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 22 00 84 00 18 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B7"))
+    println("5:  $r5")
+    val r6 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 0A 00 85 01 01 86"))
+    println("6:  $r6")
+    val r7 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 09 00 86 00 86"))
+    println("7:  $r7")
+    val r8 = LockCtlBoardCmdHelper.parseResponse(hexToBytes("57 4B 4C 59 09 00 87 00 87"))
+    println("8:  $r8")
+  }
+
 }
