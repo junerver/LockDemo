@@ -1,9 +1,16 @@
 package xyz.junerver.android.lockdemo;
 
 import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.*;
+
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.AllLocksStatusResponse;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.BaseResponse;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelResponse;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelStatus;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.LockStatusResponse;
+import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.StatusUploadResponse;
 
 /**
  * 门锁控制板指令构造辅助工具类
@@ -117,6 +124,10 @@ public class LockCtlBoardCmdHelper {
      * @return 指令字节数组
      */
     public static byte[] buildFlashChannelCommand(byte boardAddress, int lockId) {
+        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
+            Log.e(TAG, "门锁ID范围错误");
+            return null;
+        }
         byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_FLASH_CHANNEL, data);
     }
@@ -128,6 +139,10 @@ public class LockCtlBoardCmdHelper {
      * @return 指令字节数组
      */
     public static byte[] buildOpenSingleLockCommand(byte boardAddress, int lockId) {
+        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
+            Log.e(TAG, "门锁ID范围错误");
+            return null;
+        }
         byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_OPEN_SINGLE_LOCK, data);
     }
@@ -139,6 +154,10 @@ public class LockCtlBoardCmdHelper {
      * @return 指令字节数组
      */
     public static byte[] buildGetSingleLockStatusCommand(byte boardAddress, int lockId) {
+        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
+            Log.e(TAG, "门锁ID范围错误");
+            return null;
+        }
         byte[] data = {(byte) lockId};
         return buildCommand(boardAddress, CMD_GET_SINGLE_STATUS, data);
     }

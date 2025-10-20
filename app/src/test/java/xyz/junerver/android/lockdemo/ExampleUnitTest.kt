@@ -166,8 +166,8 @@ class ExampleUnitTest {
     println("同时开多锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"open_multiple_locks\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_multiple_locks\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
     assertTrue("JSON应包含成功消息", jsonResult.contains("成功"))
   }
 
@@ -181,9 +181,9 @@ class ExampleUnitTest {
     println("通道闪烁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"flash_channel\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
-    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\":1"))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"flash_channel\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
   }
 
   /**
@@ -196,11 +196,11 @@ class ExampleUnitTest {
     println("开单锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"open_single_lock\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
-    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\":1"))
-    assertTrue("JSON应包含channelStatusInfo字段", jsonResult.contains("\"channelStatusInfo\""))
-    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\":false")) // 0x00表示打开，所以isLocked为false
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_single_lock\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
+    assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
+    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\": false")) // 0x00表示打开，所以isLocked为false
   }
 
   /**
@@ -213,10 +213,10 @@ class ExampleUnitTest {
     println("查询单个门锁状态JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"get_single_lock_status\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
-    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\":1"))
-    assertTrue("JSON应包含channelStatusInfo字段", jsonResult.contains("\"channelStatusInfo\""))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"get_single_lock_status\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
+    assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
   }
 
   /**
@@ -230,10 +230,10 @@ class ExampleUnitTest {
     println("查询所有门锁状态JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"get_all_locks_status\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
-    assertTrue("JSON应包含channelCount字段", jsonResult.contains("\"channelCount\":4"))
-    assertTrue("JSON应包含channelStatus数组", jsonResult.contains("\"channelStatus\":["))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"get_all_locks_status\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
+    assertTrue("JSON应包含channelCount字段", jsonResult.contains("\"channelCount\": 4"))
+    assertTrue("JSON应包含channelStatus数组", jsonResult.contains("\"channelStatus\": ["))
   }
 
   /**
@@ -246,10 +246,10 @@ class ExampleUnitTest {
     println("状态上传JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"status_upload\""))
-    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\":1"))
-    assertTrue("JSON应包含channelStatusInfo字段", jsonResult.contains("\"channelStatusInfo\""))
-    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\":true")) // 0x01表示关闭，所以isLocked为true
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"status_upload\""))
+    assertTrue("JSON应包含channelNo字段", jsonResult.contains("\"channelNo\": 1"))
+    assertTrue("JSON应包含channelStatus字段", jsonResult.contains("\"channelStatus\""))
+    assertTrue("JSON应包含isLocked字段", jsonResult.contains("\"isLocked\": true")) // 0x01表示关闭，所以isLocked为true
   }
 
   /**
@@ -262,8 +262,8 @@ class ExampleUnitTest {
     println("开全部锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"open_all_locks\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_all_locks\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
   }
 
   /**
@@ -276,8 +276,8 @@ class ExampleUnitTest {
     println("逐一开多锁JSON响应: $jsonResult")
 
     // 验证JSON包含必要字段
-    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\":\"open_multiple_sequential\""))
-    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\":0"))
+    assertTrue("JSON应包含commandType字段", jsonResult.contains("\"commandType\": \"open_multiple_sequential\""))
+    assertTrue("JSON应包含status字段", jsonResult.contains("\"status\": 0"))
   }
 
   /**
@@ -291,8 +291,8 @@ class ExampleUnitTest {
     println("无效响应JSON解析结果: $jsonResult")
 
     // 验证错误响应格式
-    assertTrue("错误响应应包含error命令类型", jsonResult.contains("\"commandType\":\"error\""))
-    assertTrue("错误响应应包含错误状态", jsonResult.contains("\"status\":-1"))
+    assertTrue("错误响应应包含error命令类型", jsonResult.contains("\"commandType\": \"error\""))
+    assertTrue("错误响应应包含错误状态", jsonResult.contains("\"status\": -1"))
     assertTrue("错误响应应包含错误消息", jsonResult.contains("响应数据格式错误"))
   }
 
