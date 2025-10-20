@@ -31,11 +31,6 @@
             android:textStyle="bold"
             android:gravity="center" />
 
-        <View
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_weight="1" />
-
     </LinearLayout>
 
     <!-- 说明文字 -->

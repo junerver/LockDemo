@@ -138,7 +138,7 @@ public class LockCtlBoardUtil {
      * @param duration 闪烁持续时间（毫秒）
      * @return 操作是否成功
      */
-    public boolean flashLockLed(int lockId, long duration) {
+    public boolean flashLockLed(int lockId) {
         if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
             Log.e(TAG, "门锁ID无效: " + lockId);
             return false;
@@ -151,7 +151,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "门锁 " + lockId + " LED闪烁，持续时间: " + duration + "ms");
+        Log.d(TAG, "门锁 " + lockId + " LED闪烁");
         Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
 
         mSerialPortManager.sendBytes(command);

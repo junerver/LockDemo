@@ -3,24 +3,17 @@ package xyz.junerver.android.lockdemo
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
-import android.view.View
 import android.widget.Button
-import android.widget.EditText
-import android.widget.GridLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 
 class LedFlashActivity : AppCompatActivity() {
   private lateinit var lockCtl: LockCtlBoardUtil
-  private lateinit var gridLEDs: GridLayout
-  private lateinit var etFlashDuration: EditText
   private lateinit var tvResponseData: TextView
 
-  private val selectedLEDs = mutableSetOf<Int>()
   private val responseLog = StringBuilder()
   private val handler = Handler(Looper.getMainLooper())
-  private var flashDuration = 1000L
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -29,39 +22,12 @@ class LedFlashActivity : AppCompatActivity() {
     lockCtl = LockCtlBoardUtil.getInstance()
 
     initViews()
-    createLEDButtons()
     setupButtonListeners()
     setupSerialListener()
   }
 
   private fun initViews() {
-    gridLEDs = findViewById(R.id.gridLEDs)
-    etFlashDuration = findViewById(R.id.etFlashDuration)
     tvResponseData = findViewById(R.id.tvResponseData)
-
-    // 设置默认闪烁时间
-    etFlashDuration.setText("1000")
-  }
-
-  private fun createLEDButtons() {
-    // 创建7个LED控制按钮
-    for (i in 1..7) {
-      val button = Button(this).apply {
-        text = "LED $i"
-        id = View.generateViewId()
-        setOnClickListener {
-          toggleLEDSelection(i)
-        }
-        layoutParams = GridLayout.LayoutParams().apply {
-          width = 0
-          height = GridLayout.LayoutParams.WRAP_CONTENT
-          columnSpec = GridLayout.spec(GridLayout.UNDEFINED, 1f)
-          setMargins(4, 4, 4, 4)
-        }
-      }
-
-      gridLEDs.addView(button)
-    }
   }
 
   private fun setupButtonListeners() {
@@ -70,40 +36,33 @@ class LedFlashActivity : AppCompatActivity() {
       finish()
     }
 
-    // 预设时间按钮
-    findViewById<Button>(R.id.btnTime500).setOnClickListener {
-      setFlashDuration(500)
+    // LED闪烁按钮
+    findViewById<Button>(R.id.btnLED1).setOnClickListener {
+      executeLEDFlash(1)
     }
 
-    findViewById<Button>(R.id.btnTime1000).setOnClickListener {
-      setFlashDuration(1000)
+    findViewById<Button>(R.id.btnLED2).setOnClickListener {
+      executeLEDFlash(2)
     }
 
-    findViewById<Button>(R.id.btnTime2000).setOnClickListener {
-      setFlashDuration(2000)
+    findViewById<Button>(R.id.btnLED3).setOnClickListener {
+      executeLEDFlash(3)
     }
 
-    findViewById<Button>(R.id.btnTime5000).setOnClickListener {
-      setFlashDuration(5000)
+    findViewById<Button>(R.id.btnLED4).setOnClickListener {
+      executeLEDFlash(4)
     }
 
-    // 全选按钮
-    findViewById<Button>(R.id.btnSelectAll).setOnClickListener {
-      for (i in 1..7) {
-        selectedLEDs.add(i)
-      }
-      updateAllButtonStates()
+    findViewById<Button>(R.id.btnLED5).setOnClickListener {
+      executeLEDFlash(5)
     }
 
-    // 清空按钮
-    findViewById<Button>(R.id.btnClearAll).setOnClickListener {
-      selectedLEDs.clear()
-      updateAllButtonStates()
+    findViewById<Button>(R.id.btnLED6).setOnClickListener {
+      executeLEDFlash(6)
     }
 
-    // 执行LED闪烁按钮
-    findViewById<Button>(R.id.btnExecuteFlash).setOnClickListener {
-      executeLEDFlash()
+    findViewById<Button>(R.id.btnLED7).setOnClickListener {
+      executeLEDFlash(7)
     }
   }
 
@@ -117,69 +76,15 @@ class LedFlashActivity : AppCompatActivity() {
     })
   }
 
-  private fun toggleLEDSelection(ledId: Int) {
-    if (selectedLEDs.contains(ledId)) {
-      selectedLEDs.remove(ledId)
+  private fun executeLEDFlash(ledId: Int) {
+    val success = lockCtl.flashLockLed(ledId)
+    if (success) {
+      appendResponseData("LED $ledId 闪烁命令发送成功")
+      showToast("LED $ledId 正在闪烁")
     } else {
-      selectedLEDs.add(ledId)
+      appendResponseData("LED $ledId 闪烁失败")
+      showToast("LED $ledId 闪烁失败")
     }
-
-    updateButtonState(gridLEDs.getChildAt(ledId - 1) as Button, selectedLEDs.contains(ledId))
-  }
-
-  private fun setFlashDuration(duration: Int) {
-    flashDuration = duration.toLong()
-    etFlashDuration.setText(duration.toString())
-    showToast("闪烁时间设置为：${duration}ms")
-  }
-
-  private fun updateButtonState(button: Button, isSelected: Boolean) {
-    if (isSelected) {
-      button.setBackgroundColor(resources.getColor(android.R.color.holo_orange_light))
-      button.setTextColor(resources.getColor(android.R.color.white))
-    } else {
-      button.setBackgroundColor(resources.getColor(android.R.color.darker_gray))
-      button.setTextColor(resources.getColor(android.R.color.white))
-    }
-  }
-
-  private fun updateAllButtonStates() {
-    for (i in 0 until gridLEDs.childCount) {
-      val button = gridLEDs.getChildAt(i) as Button
-      updateButtonState(button, selectedLEDs.contains(i + 1))
-    }
-  }
-
-  private fun executeLEDFlash() {
-    if (selectedLEDs.isEmpty()) {
-      showToast("请选择要闪烁的LED")
-      return
-    }
-
-    // 验证闪烁时间
-    try {
-      flashDuration = etFlashDuration.text.toString().toLong()
-      if (flashDuration <= 0) {
-        showToast("请输入有效的闪烁时间")
-        return
-      }
-    } catch (e: NumberFormatException) {
-      showToast("请输入有效的数字")
-      return
-    }
-
-    // 为每个选中的LED执行闪烁
-    val ledIds = selectedLEDs.toIntArray()
-    for (ledId in ledIds) {
-      val success = lockCtl.flashLockLed(ledId, flashDuration)
-      if (success) {
-        appendResponseData("LED $ledId 开始闪烁，持续时间：${flashDuration}ms")
-      } else {
-        appendResponseData("LED $ledId 闪烁失败")
-      }
-    }
-
-    showToast("正在闪烁LED：${selectedLEDs.joinToString(", ")}，时间：${flashDuration}ms")
   }
 
   private fun appendResponseData(data: String) {

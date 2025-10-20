@@ -234,6 +234,7 @@ public class LockCtlBoardCmdHelper {
      * @return JSON格式的字符串
      */
     public static String parseResponseToJson(byte[] response) {
+        Log.d(TAG, "parseResponseToJson: " + bytesToHex(response));
         if (!validateResponse(response)) {
             return gson.toJson(new BaseResponse("error", -1, "响应数据格式错误"));
         }
