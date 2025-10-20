@@ -7,6 +7,7 @@ import org.junit.Test
 /**
  * 门锁控制板指令构造单元测试
  * 测试各种门锁控制指令的构造功能，确保生成的指令符合通讯协议规范
+ * 按照Demo顺序排列测试用例
  */
 class ExampleUnitTest {
   
@@ -16,21 +17,9 @@ class ExampleUnitTest {
   }
 
   /**
-   * 测试3: 开单个锁
-   * Demo: 打开0号板的1号门
-   * 预期: 57 4B 4C 59 09 00 82 01 83
-   */
-  @Test
-  fun testOpenSingleLock() {
-    val bytes = LockCtlBoardUtil.getInstance().buildOpenSingleLockCommand(0x00.toByte(), 1)
-    assertNotNull("开单锁指令不应为null", bytes)
-    assertEquals("开单锁指令不匹配", "57 4B 4C 59 09 00 82 01 83", bytesToHex(bytes))
-  }
-  
-  /**
    * 测试1: 同时开多锁
    * Demo: 同时打开0号板的1、2、3号门
-   * 预期: 57 4B 4C 59 0C 00 80 03 01 02 03 86
+   * 上位机发送: 57 4B 4C 59 0C 00 80 03 01 02 03 86
    */
   @Test
   fun testOpenMultipleLocksSimultaneously() {
@@ -41,20 +30,32 @@ class ExampleUnitTest {
   
   /**
    * 测试2: 通道闪烁
-   * Demo: 0号板的1号通道闪烁（持续时间参数0x80）
-   * 预期: 57 4B 4C 59 09 00 81 01 80
+   * Demo: 0号板的1号通道闪烁
+   * 上位机发送: 57 4B 4C 59 09 00 81 01 80
    */
   @Test
   fun testFlashChannel() {
-    val bytes = LockCtlBoardUtil.getInstance().buildFlashChannelCommand(0x00.toByte(), 1, 0x80.toLong())
+    val bytes = LockCtlBoardUtil.getInstance().buildFlashChannelCommand(0x00.toByte(), 1)
     assertNotNull("通道闪烁指令不应为null", bytes)
     assertEquals("通道闪烁指令不匹配", "57 4B 4C 59 09 00 81 01 80", bytesToHex(bytes))
   }
   
   /**
+   * 测试3: 开单个锁
+   * Demo: 打开0号板的1号门
+   * 上位机发送: 57 4B 4C 59 09 00 82 01 83
+   */
+  @Test
+  fun testOpenSingleLock() {
+    val bytes = LockCtlBoardUtil.getInstance().buildOpenSingleLockCommand(0x00.toByte(), 1)
+    assertNotNull("开单锁指令不应为null", bytes)
+    assertEquals("开单锁指令不匹配", "57 4B 4C 59 09 00 82 01 83", bytesToHex(bytes))
+  }
+  
+  /**
    * 测试4: 查询单个门状态
    * Demo: 查询0号板的1号门状态
-   * 预期: 57 4B 4C 59 09 00 83 01 82
+   * 上位机发送: 57 4B 4C 59 09 00 83 01 82
    */
   @Test
   fun testGetSingleLockStatus() {
@@ -65,8 +66,8 @@ class ExampleUnitTest {
   
   /**
    * 测试5: 查询所有门状态
-   * Demo: 查询0号板的全部门状态
-   * 预期: 57 4B 4C 59 08 00 84 85
+   * Demo: 查询0号板的全部门状态（以24路锁控板为例）
+   * 上位机发送: 57 4B 4C 59 08 00 84 85
    */
   @Test
   fun testGetAllLocksStatus() {
@@ -78,7 +79,7 @@ class ExampleUnitTest {
   /**
    * 测试6: 开所有门
    * Demo: 打开0号板的全部门
-   * 预期: 57 4B 4C 59 08 00 86 87
+   * 上位机发送: 57 4B 4C 59 08 00 86 87
    */
   @Test
   fun testOpenAllLocks() {
@@ -90,7 +91,7 @@ class ExampleUnitTest {
   /**
    * 测试7: 逐一开多门
    * Demo: 打开0号板的1、2、3号门
-   * 预期: 57 4B 4C 59 0C 00 87 03 01 02 03 81
+   * 上位机发送: 57 4B 4C 59 0C 00 87 03 01 02 03 81
    */
   @Test
   fun testOpenMultipleLocksSequentially() {
@@ -150,7 +151,7 @@ class ExampleUnitTest {
     assertEquals("状态字节应为成功", 0x00.toByte(), lockCtl.parseResponseStatus(validResponse))
     
     // 测试无效的响应数据（错误的校验字节）
-    val invalidResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x00, 0x01, 0x00)
+    val invalidResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x01, 0x00, 0x01, 0x00)
     assertEquals("无效响应数据应验证失败", false, lockCtl.validateResponse(invalidResponse))
   }
   

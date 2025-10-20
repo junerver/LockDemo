@@ -298,9 +298,10 @@ public class LockCtlBoardUtil {
         }
 
         // 数据域: 每个门锁ID占一个字节
-        byte[] data = new byte[lockIds.length];
+        byte[] data = new byte[lockIds.length + 1];
+        data[0] = (byte) lockIds.length;
         for (int i = 0; i < lockIds.length; i++) {
-            data[i] = (byte) lockIds[i];
+            data[i + 1] = (byte) lockIds[i];
         }
 
         return buildCommand(boardAddress, CMD_OPEN_MULTIPLE_LOCKS, data);
@@ -398,9 +399,10 @@ public class LockCtlBoardUtil {
         }
 
         // 数据域: 每个门锁ID占一个字节
-        byte[] data = new byte[lockIds.length];
+        byte[] data = new byte[lockIds.length + 1];
+        data[0] = (byte) lockIds.length;
         for (int i = 0; i < lockIds.length; i++) {
-            data[i] = (byte) lockIds[i];
+            data[i + 1] = (byte) lockIds[i];
         }
 
         return buildCommand(boardAddress, CMD_OPEN_MULTIPLE_SEQUENTIAL, data);
