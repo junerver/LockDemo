@@ -20,6 +20,9 @@ public class LockCtlBoardUtil {
 
     private OnDataReceived mOnDataReceived;
 
+    // 数据缓冲区，用于处理分包数据
+    private final java.util.List<Byte> dataBuffer = new java.util.ArrayList<>();
+
     public interface OnDataReceived {
         void onDataReceived(String json);
     }
@@ -69,11 +72,15 @@ public class LockCtlBoardUtil {
 
                     @Override
                     public void onDataReceived(byte[] bytes) {
-                        String json = LockCtlBoardCmdHelper.parseResponseToJson(bytes);
-                        if (mOnDataReceived != null) {
-                            mOnDataReceived.onDataReceived(json);
+                        // 将新数据添加到缓冲区
+                        synchronized (dataBuffer) {
+                            for (byte b : bytes) {
+                                dataBuffer.add(b);
+                            }
+
+                            // 尝试从缓冲区中提取完整的响应帧
+                            extractCompleteFrames();
                         }
-                        Log.d(TAG, "onDataReceived: " + json);
                     }
 
                     @Override
@@ -89,13 +96,34 @@ public class LockCtlBoardUtil {
         if (null != mSerialPortManager) {
             mSerialPortManager.closeSerialPort();
             mSerialPortManager = null;
-            Log.d(TAG, "串口已关闭");
+
+            // 清空数据缓冲区
+            synchronized (dataBuffer) {
+                dataBuffer.clear();
+            }
+
+            Log.d(TAG, "串口已关闭，数据缓冲区已清空");
         }
     }
 
     // 检查串口是否已打开
     public boolean isSerialPortOpen() {
         return mSerialPortManager != null;
+    }
+
+    // 清空数据缓冲区
+    public void clearDataBuffer() {
+        synchronized (dataBuffer) {
+            dataBuffer.clear();
+            Log.d(TAG, "数据缓冲区已手动清空");
+        }
+    }
+
+    // 获取缓冲区中的数据大小（用于调试）
+    public int getBufferSize() {
+        synchronized (dataBuffer) {
+            return dataBuffer.size();
+        }
     }
 
     // 设置串口数据监听器
@@ -343,6 +371,85 @@ public class LockCtlBoardUtil {
         Log.d(TAG, "通道关闭完成");
 
         return true;
+    }
+
+    /**
+     * 从缓冲区中提取完整的响应帧
+     */
+    private void extractCompleteFrames() {
+        // 查找起始符位置 (57 4B 4C 59)
+        int startIndex = -1;
+        for (int i = 0; i <= dataBuffer.size() - 4; i++) {
+            if (dataBuffer.get(i) == 0x57 &&
+                    dataBuffer.get(i + 1) == 0x4B &&
+                    dataBuffer.get(i + 2) == 0x4C &&
+                    dataBuffer.get(i + 3) == 0x59) {
+                startIndex = i;
+                break;
+            }
+        }
+
+        // 如果没找到起始符，清空缓冲区（防止错误数据堆积）
+        if (startIndex == -1) {
+            if (dataBuffer.size() > 100) { // 防止缓冲区无限增长
+                Log.w(TAG, "缓冲区中有大量无效数据，清空缓冲区");
+                dataBuffer.clear();
+            }
+            return;
+        }
+
+        // 检查是否有足够的数据来读取帧长度字段
+        if (dataBuffer.size() < startIndex + 5) {
+            return; // 数据不足，等待更多数据
+        }
+
+        // 读取帧长度
+        int frameLength = dataBuffer.get(startIndex + 4) & 0xFF;
+
+        // 检查是否有完整的数据帧
+        if (dataBuffer.size() < startIndex + frameLength) {
+            return; // 数据不完整，等待更多数据
+        }
+
+        // 提取完整的数据帧
+        byte[] frameData = new byte[frameLength];
+        for (int i = 0; i < frameLength; i++) {
+            frameData[i] = dataBuffer.get(startIndex + i);
+        }
+
+        // 从缓冲区中移除已处理的数据
+        for (int i = 0; i < startIndex + frameLength; i++) {
+            dataBuffer.remove(0);
+        }
+
+        // 验证帧的完整性
+        if (LockCtlBoardCmdHelper.validateResponse(frameData)) {
+            // 解析并发送响应数据
+            String json = LockCtlBoardCmdHelper.parseResponseToJson(frameData);
+            if (mOnDataReceived != null) {
+                mOnDataReceived.onDataReceived(json);
+            }
+            Log.d(TAG, "收到完整响应帧: " + json);
+        } else {
+            Log.w(TAG, "收到无效的响应帧，丢弃: " + bytesToHex(frameData));
+        }
+
+        // 递归处理缓冲区中可能的其他完整帧
+        if (dataBuffer.size() > 0) {
+            extractCompleteFrames();
+        }
+    }
+
+    /**
+     * 字节数组转十六进制字符串（用于日志输出）
+     */
+    private static String bytesToHex(byte[] bytes) {
+        if (bytes == null) return "null";
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02X ", b));
+        }
+        return sb.toString().trim();
     }
 
 }

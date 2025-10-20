@@ -278,7 +278,7 @@ public class LockCtlBoardCmdHelper {
      * @param response 响应数据
      * @return 验证是否通过
      */
-    private static boolean validateResponse(byte[] response) {
+    public static boolean validateResponse(byte[] response) {
         if (response == null || response.length < 6) {
             return false;
         }
