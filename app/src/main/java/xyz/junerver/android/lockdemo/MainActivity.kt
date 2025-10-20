@@ -19,12 +19,15 @@ class MainActivity : AppCompatActivity() {
       v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
       insets
     }
-    
+
     // 初始化门锁控制板工具类
     lockCtl = LockCtlBoardUtil.getInstance()
-    
+
     // 测试指令构造功能
     testLockCommands()
+
+    // 测试Helper类静态方法
+    testHelperCommands()
   }
   
   /**
@@ -36,19 +39,19 @@ class MainActivity : AppCompatActivity() {
     val boardAddress: Byte = 0x00 // 0号板
     
     // 示例1: 构造1号通道闪烁
-    val flashCommand = lockCtl.buildFlashChannelCommand(boardAddress, 1)
+    val flashCommand = LockCtlBoardCmdHelper.buildFlashChannelCommand(boardAddress, 1)
     Log.d("MainActivity", "1号通道闪烁指令: ${bytesToHex(flashCommand)}")
     
     // 示例2: 构造开启1号锁指令
-    val openSingleCommand = lockCtl.buildOpenSingleLockCommand(boardAddress, 1)
+    val openSingleCommand = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(boardAddress, 1)
     Log.d("MainActivity", "开启1号锁指令: ${bytesToHex(openSingleCommand)}")
     
     // 示例3: 构造同时开启1,2,3号锁指令
-    val openMultipleCommand = lockCtl.buildOpenMultipleLocksCommand(boardAddress, 1, 2, 3)
+    val openMultipleCommand = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(boardAddress, 1, 2, 3)
     Log.d("MainActivity", "同时开启1,2,3号锁指令: ${bytesToHex(openMultipleCommand)}")
     
     // 示例4: 构造查询所有门锁状态指令
-    val getAllStatusCommand = lockCtl.buildGetAllLocksStatusCommand(boardAddress)
+    val getAllStatusCommand = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand(boardAddress)
     Log.d("MainActivity", "查询所有门锁状态指令: ${bytesToHex(getAllStatusCommand)}")
     
     // 测试响应解析功能
@@ -67,12 +70,60 @@ class MainActivity : AppCompatActivity() {
     // 57 4B 4C 59 0A 00 81 00 01 83
     val successResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x00, 0x01, 0x83.toByte())
     
-    val isValid = lockCtl.validateResponse(successResponse)
+    val isValid = LockCtlBoardCmdHelper.validateResponse(successResponse)
     Log.d("MainActivity", "响应验证结果: ${if (isValid) "通过" else "失败"}")
     
     if (isValid) {
-      val status = lockCtl.parseResponseStatus(successResponse)
+      val status = LockCtlBoardCmdHelper.parseResponseStatus(successResponse)
       Log.d("MainActivity", "操作状态: ${if (status == 0x00.toByte()) "成功" else "失败"}")
+    }
+  }
+  
+  /**
+   * 测试LockCtlBoardCmdHelper静态方法
+   */
+  private fun testHelperCommands() {
+    Log.d("MainActivity", "=== 测试Helper类静态方法 ===")
+    
+    val boardAddress: Byte = 0x00 // 0号板
+    
+    // 示例1: 使用Helper类构造通道闪烁指令
+    val flashCommand = LockCtlBoardCmdHelper.buildFlashChannelCommand(boardAddress, 1)
+    Log.d("MainActivity", "Helper类通道闪烁指令: ${LockCtlBoardCmdHelper.bytesToHex(flashCommand)}")
+    
+    // 示例2: 使用Helper类构造开单锁指令
+    val openSingleCommand = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(boardAddress, 1)
+    Log.d("MainActivity", "Helper类开单锁指令: ${LockCtlBoardCmdHelper.bytesToHex(openSingleCommand)}")
+    
+    // 示例3: 使用Helper类构造同时开多锁指令
+    val openMultipleCommand = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(boardAddress, 1, 2, 3)
+    Log.d("MainActivity", "Helper类同时开多锁指令: ${LockCtlBoardCmdHelper.bytesToHex(openMultipleCommand)}")
+    
+    // 示例4: 使用Helper类构造查询所有门锁状态指令
+    val getAllStatusCommand = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand(boardAddress)
+    Log.d("MainActivity", "Helper类查询所有锁状态指令: ${LockCtlBoardCmdHelper.bytesToHex(getAllStatusCommand)}")
+    
+    // 测试响应验证功能
+    testHelperResponseValidation()
+    
+    Log.d("MainActivity", "=== Helper类静态方法测试完成 ===")
+  }
+  
+  /**
+   * 测试Helper类响应数据解析功能
+   */
+  private fun testHelperResponseValidation() {
+    Log.d("MainActivity", "=== 测试Helper类响应解析 ===")
+    
+    // 模拟1号通道闪烁的成功响应数据
+    val successResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x00, 0x01, 0x83.toByte())
+    
+    val isValid = LockCtlBoardCmdHelper.validateResponse(successResponse)
+    Log.d("MainActivity", "Helper类响应验证结果: ${if (isValid) "通过" else "失败"}")
+    
+    if (isValid) {
+      val status = LockCtlBoardCmdHelper.parseResponseStatus(successResponse)
+      Log.d("MainActivity", "Helper类操作状态: ${if (status == 0x00.toByte()) "成功" else "失败"}")
     }
   }
   

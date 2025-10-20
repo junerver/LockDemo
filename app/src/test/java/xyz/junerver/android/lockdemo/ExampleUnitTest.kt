@@ -8,6 +8,7 @@ import org.junit.Test
  * 门锁控制板指令构造单元测试
  * 测试各种门锁控制指令的构造功能，确保生成的指令符合通讯协议规范
  * 按照Demo顺序排列测试用例
+ * 注意：现在使用 LockCtlBoardCmdHelper 工具类进行指令构造
  */
 class ExampleUnitTest {
   
@@ -23,7 +24,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testOpenMultipleLocksSimultaneously() {
-    val bytes = LockCtlBoardUtil.getInstance().buildOpenMultipleLocksCommand(0x00.toByte(), 1, 2, 3)
+    val bytes = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(0x00.toByte(), 1, 2, 3)
     assertNotNull("同时开多锁指令不应为null", bytes)
     assertEquals("同时开多锁指令不匹配", "57 4B 4C 59 0C 00 80 03 01 02 03 86", bytesToHex(bytes))
   }
@@ -35,7 +36,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testFlashChannel() {
-    val bytes = LockCtlBoardUtil.getInstance().buildFlashChannelCommand(0x00.toByte(), 1)
+    val bytes = LockCtlBoardCmdHelper.buildFlashChannelCommand(0x00.toByte(), 1)
     assertNotNull("通道闪烁指令不应为null", bytes)
     assertEquals("通道闪烁指令不匹配", "57 4B 4C 59 09 00 81 01 80", bytesToHex(bytes))
   }
@@ -47,7 +48,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testOpenSingleLock() {
-    val bytes = LockCtlBoardUtil.getInstance().buildOpenSingleLockCommand(0x00.toByte(), 1)
+    val bytes = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(0x00.toByte(), 1)
     assertNotNull("开单锁指令不应为null", bytes)
     assertEquals("开单锁指令不匹配", "57 4B 4C 59 09 00 82 01 83", bytesToHex(bytes))
   }
@@ -59,7 +60,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testGetSingleLockStatus() {
-    val bytes = LockCtlBoardUtil.getInstance().buildGetSingleLockStatusCommand(0x00.toByte(), 1)
+    val bytes = LockCtlBoardCmdHelper.buildGetSingleLockStatusCommand(0x00.toByte(), 1)
     assertNotNull("查询单门状态指令不应为null", bytes)
     assertEquals("查询单门状态指令不匹配", "57 4B 4C 59 09 00 83 01 82", bytesToHex(bytes))
   }
@@ -71,7 +72,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testGetAllLocksStatus() {
-    val bytes = LockCtlBoardUtil.getInstance().buildGetAllLocksStatusCommand(0x00.toByte())
+    val bytes = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand(0x00.toByte())
     assertNotNull("查询所有门状态指令不应为null", bytes)
     assertEquals("查询所有门状态指令不匹配", "57 4B 4C 59 08 00 84 85", bytesToHex(bytes))
   }
@@ -83,7 +84,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testOpenAllLocks() {
-    val bytes = LockCtlBoardUtil.getInstance().buildOpenAllLocksCommand(0x00.toByte())
+    val bytes = LockCtlBoardCmdHelper.buildOpenAllLocksCommand(0x00.toByte())
     assertNotNull("开所有门指令不应为null", bytes)
     assertEquals("开所有门指令不匹配", "57 4B 4C 59 08 00 86 87", bytesToHex(bytes))
   }
@@ -95,7 +96,7 @@ class ExampleUnitTest {
    */
   @Test
   fun testOpenMultipleLocksSequentially() {
-    val bytes = LockCtlBoardUtil.getInstance().buildOpenMultipleSequentialCommand(0x00.toByte(), 1, 2, 3)
+    val bytes = LockCtlBoardCmdHelper.buildOpenMultipleSequentialCommand(0x00.toByte(), 1, 2, 3)
     assertNotNull("逐一开多门指令不应为null", bytes)
     assertEquals("逐一开多门指令不匹配", "57 4B 4C 59 0C 00 87 03 01 02 03 81", bytesToHex(bytes))
   }
@@ -105,15 +106,13 @@ class ExampleUnitTest {
    */
   @Test
   fun testDifferentBoardAddresses() {
-    val lockCtl = LockCtlBoardUtil.getInstance()
-    
     // 测试1号板的开单锁指令
-    val board1Command = lockCtl.buildOpenSingleLockCommand(0x01.toByte(), 1)
+    val board1Command = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(0x01.toByte(), 1)
     assertNotNull("1号板开单锁指令不应为null", board1Command)
     assertEquals("1号板开单锁指令不匹配", "57 4B 4C 59 09 01 82 01 82", bytesToHex(board1Command))
     
     // 测试10号板的开单锁指令
-    val board10Command = lockCtl.buildOpenSingleLockCommand(0x0A.toByte(), 1)
+    val board10Command = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(0x0A.toByte(), 1)
     assertNotNull("10号板开单锁指令不应为null", board10Command)
     assertEquals("10号板开单锁指令不匹配", "57 4B 4C 59 09 0A 82 01 89", bytesToHex(board10Command))
   }
@@ -123,18 +122,16 @@ class ExampleUnitTest {
    */
   @Test
   fun testErrorHandling() {
-    val lockCtl = LockCtlBoardUtil.getInstance()
-    
     // 测试无效门锁ID
-    val invalidLockCommand = lockCtl.buildOpenSingleLockCommand(0x00.toByte(), -1)
+    val invalidLockCommand = LockCtlBoardCmdHelper.buildOpenSingleLockCommand(0x00.toByte(), -1)
     assertEquals("无效门锁ID应返回null", null, invalidLockCommand)
     
     // 测试空门锁ID数组
-    val emptyLocksCommand = lockCtl.buildOpenMultipleLocksCommand(0x00.toByte())
+    val emptyLocksCommand = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(0x00.toByte())
     assertEquals("空门锁ID数组应返回null", null, emptyLocksCommand)
     
     // 测试null门锁ID数组
-    val nullLocksCommand = lockCtl.buildOpenMultipleLocksCommand(0x00.toByte(), *intArrayOf())
+    val nullLocksCommand = LockCtlBoardCmdHelper.buildOpenMultipleLocksCommand(0x00.toByte(), *intArrayOf())
     assertEquals("null门锁ID数组应返回null", null, nullLocksCommand)
   }
   
@@ -143,16 +140,31 @@ class ExampleUnitTest {
    */
   @Test
   fun testResponseValidation() {
-    val lockCtl = LockCtlBoardUtil.getInstance()
-    
     // 测试有效的响应数据
     val validResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x00, 0x01, 0x83.toByte())
-    assertEquals("有效响应数据应通过验证", true, lockCtl.validateResponse(validResponse))
-    assertEquals("状态字节应为成功", 0x00.toByte(), lockCtl.parseResponseStatus(validResponse))
+    assertEquals("有效响应数据应通过验证", true, LockCtlBoardCmdHelper.validateResponse(validResponse))
+    assertEquals("状态字节应为成功", 0x00.toByte(), LockCtlBoardCmdHelper.parseResponseStatus(validResponse))
     
     // 测试无效的响应数据（错误的校验字节）
     val invalidResponse = byteArrayOf(0x57, 0x4B, 0x4C, 0x59, 0x0A, 0x00, 0x81.toByte(), 0x01, 0x00, 0x01, 0x00)
-    assertEquals("无效响应数据应验证失败", false, lockCtl.validateResponse(invalidResponse))
+    assertEquals("无效响应数据应验证失败", false, LockCtlBoardCmdHelper.validateResponse(invalidResponse))
+  }
+  
+  /**
+   * 测试通用指令构造方法
+   */
+  @Test
+  fun testBuildCommand() {
+    // 测试构造自定义指令
+    val customData = byteArrayOf(0x01, 0x02, 0x03)
+    val customCommand = LockCtlBoardCmdHelper.buildCommand(0x01.toByte(), 0x80.toByte(), customData)
+    assertNotNull("自定义指令不应为null", customCommand)
+    
+    // 验证指令格式
+    assertEquals("指令长度应正确", 11, customCommand.size)
+    assertEquals("起始符应正确", "57 4B 4C 59", bytesToHex(customCommand.copyOfRange(0, 4)))
+    assertEquals("板地址应正确", 0x01.toByte(), customCommand[5])
+    assertEquals("指令字应正确", 0x80.toByte(), customCommand[6])
   }
   
   /**
