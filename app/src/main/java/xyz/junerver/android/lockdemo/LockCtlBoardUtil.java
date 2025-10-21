@@ -167,7 +167,7 @@ public class LockCtlBoardUtil {
     /**
      * 2. 锁通道LED闪烁
      *
-     * 注意：LED闪烁功能只支持接入设备为LED，如果是锁将无法
+     * 注意：LED闪烁功能只支持接入设备为LED，如果是锁将会不断处于解锁状态，请勿使用此功能（必须重启才能重置）
      *
      * @param lockId   门锁ID
      * @return 操作是否成功
@@ -296,6 +296,8 @@ public class LockCtlBoardUtil {
     /**
      * 7. 开多锁，逐一打开（可变长参数）
      *
+     * 这个功能可以支持多锁打开，不同于同时打开的方法，需要开多锁时优先使用该方法
+     *
      * @param lockIds 门锁ID数组（可变长参数）
      * @return 操作是否成功
      */
@@ -323,7 +325,7 @@ public class LockCtlBoardUtil {
     }
 
     /**
-     * 8. 通道持续打开
+     * 8. 通道持续打开，适用于继电器、灯具等场景，不可以用于控锁
      *
      * @param channelId 通道ID
      * @param duration  持续时间（毫秒）
