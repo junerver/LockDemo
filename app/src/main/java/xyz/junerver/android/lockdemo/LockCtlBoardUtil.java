@@ -137,6 +137,8 @@ public class LockCtlBoardUtil {
     /**
      * 1. 同时开多锁
      *
+     * 实际使用时最多支持两个锁，第三个锁将无法打开
+     *
      * @param lockIds 门锁ID数组（可变长参数）
      * @return 操作是否成功
      */
@@ -164,6 +166,8 @@ public class LockCtlBoardUtil {
 
     /**
      * 2. 锁通道LED闪烁
+     *
+     * 注意：LED闪烁功能只支持接入设备为LED，如果是锁将无法
      *
      * @param lockId   门锁ID
      * @return 操作是否成功

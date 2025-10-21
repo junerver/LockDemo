@@ -17,11 +17,16 @@ class SequentialOpenActivity : AppCompatActivity() {
   private lateinit var lockCtl: LockCtlBoardUtil
   private lateinit var tvSelectedLocks: TextView
   private lateinit var tvResponseData: TextView
+  private lateinit var tvCurrentMode: TextView
+  private lateinit var tvDescription: TextView
   private lateinit var gridLocks: GridLayout
 
   private val selectedLocks = mutableSetOf<Int>()
   private val responseLog = StringBuilder()
   private val handler = Handler(Looper.getMainLooper())
+
+  // 开锁模式：true=依次开锁，false=同步开锁
+  private var isSequentialMode = true
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -38,7 +43,12 @@ class SequentialOpenActivity : AppCompatActivity() {
   private fun initViews() {
     tvSelectedLocks = findViewById(R.id.tvSelectedLocks)
     tvResponseData = findViewById(R.id.tvResponseData)
+    tvCurrentMode = findViewById(R.id.tvCurrentMode)
+    tvDescription = findViewById(R.id.tvDescription)
     gridLocks = findViewById(R.id.gridLocks)
+
+    // 初始化UI显示
+    updateModeDisplay()
 
     createLockButtons()
   }
@@ -94,9 +104,14 @@ class SequentialOpenActivity : AppCompatActivity() {
       updateAllButtonStates()
     }
 
-    // 执行依次开锁按钮
-    findViewById<Button>(R.id.btnExecuteSequential).setOnClickListener {
-      executeSequentialOpen()
+    // 切换模式按钮
+    findViewById<Button>(R.id.btnToggleMode).setOnClickListener {
+      toggleOpenMode()
+    }
+
+    // 执行开锁按钮
+    findViewById<Button>(R.id.btnExecuteOpen).setOnClickListener {
+      executeOpen()
     }
   }
 
@@ -152,20 +167,26 @@ class SequentialOpenActivity : AppCompatActivity() {
     }
   }
 
-  private fun executeSequentialOpen() {
+  private fun executeOpen() {
     if (selectedLocks.isEmpty()) {
       showToast("请选择要开启的锁")
       return
     }
 
     val lockIds = selectedLocks.toIntArray()
-    val success = lockCtl.openMultipleLocksSequentially(*lockIds)
+    val success = if (isSequentialMode) {
+      lockCtl.openMultipleLocksSequentially(*lockIds)
+    } else {
+      lockCtl.openMultipleLocksSimultaneously(*lockIds)
+    }
 
     if (success) {
-      showToast("正在依次开锁：${selectedLocks.joinToString(", ")}")
-      appendResponseData("开始依次开锁：${lockIds.joinToString(", ")}")
+      val modeText = if (isSequentialMode) "依次开锁" else "同步开锁"
+      showToast("正在${modeText}：${selectedLocks.joinToString(", ")}")
+      appendResponseData("开始${modeText}：${lockIds.joinToString(", ")}")
     } else {
-      showToast("依次开锁失败")
+      val modeText = if (isSequentialMode) "依次开锁" else "同步开锁"
+      showToast("${modeText}失败")
     }
   }
 
@@ -188,5 +209,31 @@ class SequentialOpenActivity : AppCompatActivity() {
 
   private fun showToast(message: String) {
     Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+  }
+
+  /**
+   * 切换开锁模式
+   */
+  private fun toggleOpenMode() {
+    isSequentialMode = !isSequentialMode
+    updateModeDisplay()
+
+    val modeText = if (isSequentialMode) "依次开锁" else "同步开锁"
+    showToast("已切换到${modeText}模式")
+  }
+
+  /**
+   * 更新模式显示
+   */
+  private fun updateModeDisplay() {
+    val modeText = if (isSequentialMode) "依次开锁" else "同步开锁"
+    val descriptionText = if (isSequentialMode) {
+      "选择要依次开启的锁（按顺序逐一打开）"
+    } else {
+      "选择要同时开启的锁（同时打开多个锁）"
+    }
+
+    tvCurrentMode.text = modeText
+    tvDescription.text = descriptionText
   }
 }
