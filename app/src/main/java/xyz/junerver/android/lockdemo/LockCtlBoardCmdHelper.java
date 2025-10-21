@@ -57,9 +57,10 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 构造串口通讯指令（通用方法）
+     *
      * @param boardAddress 板地址 (0-31)
-     * @param command 指令字
-     * @param data 数据域内容 (可为空)
+     * @param command      指令字
+     * @param data         数据域内容 (可为空)
      * @return 完整的指令字节数组
      */
     public static byte[] buildCommand(byte boardAddress, byte command, byte[] data) {
@@ -92,17 +93,15 @@ public class LockCtlBoardCmdHelper {
         byte checksum = calculateChecksum(commandBytes, 0, frameLength - 1);
         commandBytes[frameLength - 1] = checksum;
 
-        Log.d(TAG, String.format("构造指令: 板地址=0x%02X, 指令=0x%02X, 数据长度=%d",
-                                 boardAddress & 0xFF, command & 0xFF, dataLength));
-        Log.d(TAG, "完整指令: " + bytesToHex(commandBytes));
 
         return commandBytes;
     }
 
     /**
      * 1. 同时开多锁指令
+     *
      * @param boardAddress 板地址
-     * @param lockIds 门锁ID数组
+     * @param lockIds      门锁ID数组
      * @return 指令字节数组
      */
     public static byte[] buildOpenMultipleLocksCommand(byte boardAddress, int... lockIds) {
@@ -123,8 +122,9 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 2. 通道闪烁指令
+     *
      * @param boardAddress 板地址
-     * @param lockId 门锁ID
+     * @param lockId       门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildFlashChannelCommand(byte boardAddress, int lockId) {
@@ -138,8 +138,9 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 3. 开单个锁指令
+     *
      * @param boardAddress 板地址
-     * @param lockId 门锁ID
+     * @param lockId       门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildOpenSingleLockCommand(byte boardAddress, int lockId) {
@@ -153,8 +154,9 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 4. 查询单个门锁状态指令
+     *
      * @param boardAddress 板地址
-     * @param lockId 门锁ID
+     * @param lockId       门锁ID
      * @return 指令字节数组
      */
     public static byte[] buildGetSingleLockStatusCommand(byte boardAddress, int lockId) {
@@ -168,6 +170,7 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 5. 查询所有门锁状态指令
+     *
      * @param boardAddress 板地址
      * @return 指令字节数组
      */
@@ -177,6 +180,7 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 6. 开全部锁指令
+     *
      * @param boardAddress 板地址
      * @return 指令字节数组
      */
@@ -186,8 +190,9 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 7. 逐一开多锁指令
+     *
      * @param boardAddress 板地址
-     * @param lockIds 门锁ID数组
+     * @param lockIds      门锁ID数组
      * @return 指令字节数组
      */
     public static byte[] buildOpenMultipleSequentialCommand(byte boardAddress, int... lockIds) {
@@ -234,11 +239,11 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 解析响应为JSON格式（统一入口）
+     *
      * @param response 响应数据
      * @return JSON格式的字符串
      */
     public static String parseResponseToJson(byte[] response) {
-        Log.d(TAG, "parseResponseToJson: " + bytesToHex(response));
         if (!validateResponse(response)) {
             return gson.toJson(new BaseResponse("error", -1, "响应数据格式错误"));
         }
@@ -269,7 +274,7 @@ public class LockCtlBoardCmdHelper {
                     return parseCloseChannelJsonResponse(response);
                 default:
                     return gson.toJson(new BaseResponse("unknown_command", -1, "未知指令字: 0x" +
-                                        String.format("%02X", command & 0xFF)));
+                            String.format("%02X", command & 0xFF)));
             }
         } catch (Exception e) {
             Log.e(TAG, "JSON解析响应失败", e);
@@ -279,6 +284,7 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 验证响应数据的完整性
+     *
      * @param response 响应数据
      * @return 验证是否通过
      */
@@ -310,11 +316,12 @@ public class LockCtlBoardCmdHelper {
      * 解析同时开多锁响应为JSON (0x80)
      */
     private static String parseOpenMultipleLocksJsonResponse(byte[] response) {
-        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 8) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         String message = String.format("同时开多锁操作%s",
-                           status == STATUS_SUCCESS ? "成功" : "失败");
+                status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new BaseResponse("open_multiple_locks", status & 0xFF, message));
     }
 
@@ -322,12 +329,13 @@ public class LockCtlBoardCmdHelper {
      * 解析通道闪烁响应为JSON (0x81)
      */
     private static String parseFlashChannelJsonResponse(byte[] response) {
-        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 9) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channel = response[8];
         String message = String.format("通道%d闪烁操作%s",
-                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+                channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new ChannelResponse("flash_channel", status & 0xFF, channel & 0xFF, message));
     }
 
@@ -335,48 +343,51 @@ public class LockCtlBoardCmdHelper {
      * 解析开单锁响应为JSON (0x82)
      */
     private static String parseOpenSingleLockJsonResponse(byte[] response) {
-        if (response.length < 10) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 10) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channel = response[8];
         byte lockStatus = response[9];
 
         String message = String.format("通道%d开锁%s，锁状态：%s",
-                           channel & 0xFF,
-                           status == STATUS_SUCCESS ? "成功" : "失败",
-                           lockStatus == LOCK_STATUS_OPEN ? "打开" :
-                           lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
+                channel & 0xFF,
+                status == STATUS_SUCCESS ? "成功" : "失败",
+                lockStatus == LOCK_STATUS_OPEN ? "打开" :
+                        lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
 
         return gson.toJson(new LockStatusResponse("open_single_lock", status & 0xFF,
-                                   channel & 0xFF, lockStatus & 0xFF, message));
+                channel & 0xFF, lockStatus & 0xFF, message));
     }
 
     /**
      * 解析查询单个门锁状态响应为JSON (0x83)
      */
     private static String parseGetSingleLockStatusJsonResponse(byte[] response) {
-        if (response.length < 10) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 10) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channel = response[8];
         byte lockStatus = response[9];
 
         String message = String.format("查询通道%d状态%s，锁状态：%s",
-                           channel & 0xFF,
-                           status == STATUS_SUCCESS ? "成功" : "失败",
-                           lockStatus == LOCK_STATUS_OPEN ? "打开" :
-                           lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
+                channel & 0xFF,
+                status == STATUS_SUCCESS ? "成功" : "失败",
+                lockStatus == LOCK_STATUS_OPEN ? "打开" :
+                        lockStatus == LOCK_STATUS_CLOSED ? "关闭" : "错误");
 
         return gson.toJson(new LockStatusResponse("get_single_lock_status", status & 0xFF,
-                                   channel & 0xFF, lockStatus & 0xFF, message));
+                channel & 0xFF, lockStatus & 0xFF, message));
     }
 
     /**
      * 解析查询所有门锁状态响应为JSON (0x84)
      */
     private static String parseGetAllLocksStatusJsonResponse(byte[] response) {
-        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 9) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channelCount = response[8];
 
@@ -395,8 +406,9 @@ public class LockCtlBoardCmdHelper {
      * 解析状态上传响应为JSON (0x85)
      */
     private static String parseStatusUploadJsonResponse(byte[] response) {
-        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 9) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte channel = response[7];
         byte lockStatus = response[8];
 
@@ -407,11 +419,12 @@ public class LockCtlBoardCmdHelper {
      * 解析开全部锁响应为JSON (0x86)
      */
     private static String parseOpenAllLocksJsonResponse(byte[] response) {
-        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 8) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         String message = String.format("开全部锁操作%s",
-                           status == STATUS_SUCCESS ? "成功" : "失败");
+                status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new BaseResponse("open_all_locks", status & 0xFF, message));
     }
 
@@ -419,11 +432,12 @@ public class LockCtlBoardCmdHelper {
      * 解析逐一开多锁响应为JSON (0x87)
      */
     private static String parseOpenMultipleSequentialJsonResponse(byte[] response) {
-        if (response.length < 8) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 8) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         String message = String.format("逐一开多锁操作%s",
-                           status == STATUS_SUCCESS ? "成功" : "失败");
+                status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new BaseResponse("open_multiple_sequential", status & 0xFF, message));
     }
 
@@ -431,12 +445,13 @@ public class LockCtlBoardCmdHelper {
      * 解析通道持续打开响应为JSON (0x88)
      */
     private static String parseChannelKeepOpenJsonResponse(byte[] response) {
-        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 9) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channel = response[8];
         String message = String.format("通道%d持续打开操作%s",
-                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+                channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new ChannelResponse("channel_keep_open", status & 0xFF, channel & 0xFF, message));
     }
 
@@ -444,18 +459,20 @@ public class LockCtlBoardCmdHelper {
      * 解析通道关闭响应为JSON (0x89)
      */
     private static String parseCloseChannelJsonResponse(byte[] response) {
-        if (response.length < 9) return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
-
+        if (response.length < 9) {
+            return gson.toJson(new BaseResponse("error", -1, "响应数据长度不足"));
+        }
         byte status = response[7];
         byte channel = response[8];
         String message = String.format("通道%d关闭操作%s",
-                           channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
+                channel & 0xFF, status == STATUS_SUCCESS ? "成功" : "失败");
         return gson.toJson(new ChannelResponse("close_channel", status & 0xFF, channel & 0xFF, message));
     }
 
     /**
      * 计算校验字节 (XOR校验)
-     * @param data 数据
+     *
+     * @param data   数据
      * @param offset 起始位置
      * @param length 结束位置(不包含)
      * @return 校验字节
@@ -470,11 +487,14 @@ public class LockCtlBoardCmdHelper {
 
     /**
      * 字节数组转十六进制字符串 (用于日志输出)
+     *
      * @param bytes 字节数组
      * @return 十六进制字符串
      */
     public static String bytesToHex(byte[] bytes) {
-        if (bytes == null) return "null";
+        if (bytes == null) {
+            return "null";
+        }
 
         StringBuilder hexString = new StringBuilder();
         for (byte b : bytes) {

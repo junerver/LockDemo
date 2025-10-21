@@ -63,12 +63,12 @@ public class LockCtlBoardUtil {
                 .setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
                     @Override
                     public void onSuccess(File device) {
-                        Log.d(TAG, "串口打开成功");
+                        Log.i(TAG, "串口连接成功");
                     }
 
                     @Override
                     public void onFail(File device, Status status) {
-                        Log.e(TAG, "onFail: " + device.getAbsolutePath());
+                        Log.e(TAG, "串口连接失败");
                     }
                 })
                 .setOnSerialPortDataListener(new OnSerialPortDataListener() {
@@ -105,7 +105,7 @@ public class LockCtlBoardUtil {
                 dataBuffer.clear();
             }
 
-            Log.d(TAG, "串口已关闭，数据缓冲区已清空");
+            Log.i(TAG, "串口已关闭");
         }
     }
 
@@ -118,7 +118,6 @@ public class LockCtlBoardUtil {
     public void clearDataBuffer() {
         synchronized (dataBuffer) {
             dataBuffer.clear();
-            Log.d(TAG, "数据缓冲区已手动清空");
         }
     }
 
@@ -136,7 +135,7 @@ public class LockCtlBoardUtil {
 
     /**
      * 1. 同时开多锁
-     *
+     * <p>
      * 实际使用时最多支持两个锁，第三个锁将无法打开
      *
      * @param lockIds 门锁ID数组（可变长参数）
@@ -155,21 +154,18 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "同时开启门锁: " + Arrays.toString(lockIds));
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "同时开启锁: " + Arrays.toString(lockIds));
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "门锁打开完成");
 
         return true;
     }
 
     /**
      * 2. 锁通道LED闪烁
-     *
+     * <p>
      * 注意：LED闪烁功能只支持接入设备为LED，如果是锁将会不断处于解锁状态，请勿使用此功能（必须重启才能重置）
      *
-     * @param lockId   门锁ID
+     * @param lockId 门锁ID
      * @return 操作是否成功
      */
     public boolean flashLockLed(int lockId) {
@@ -185,11 +181,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "门锁 " + lockId + " LED闪烁");
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "LED闪烁: 通道 " + lockId);
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "门锁LED闪烁完成");
 
         return true;
     }
@@ -213,11 +206,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "开启门锁: " + lockId);
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "开启锁: " + lockId);
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "门锁打开完成");
 
         return true;
     }
@@ -241,11 +231,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "查询门锁状态: " + lockId);
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "查询状态: 锁 " + lockId);
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "门锁状态查询完成");
         return true;
     }
 
@@ -255,7 +242,7 @@ public class LockCtlBoardUtil {
      * @return 所有门锁状态数组
      */
     public boolean getAllLocksStatus() {
-        Log.d(TAG, "查询所有门锁状态");
+        Log.i(TAG, "查询所有锁状态");
 
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildGetAllLocksStatusCommand((byte) 0x00);
@@ -264,10 +251,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "所有门锁状态查询完成");
         return true;
     }
 
@@ -277,7 +261,7 @@ public class LockCtlBoardUtil {
      * @return 操作是否成功
      */
     public boolean openAllLocksSequentially() {
-        Log.d(TAG, "开始逐一开启所有门锁");
+        Log.i(TAG, "开启所有锁");
 
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildOpenAllLocksCommand((byte) 0x00);
@@ -286,16 +270,13 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "所有门锁开启完成");
         return true;
     }
 
     /**
      * 7. 开多锁，逐一打开（可变长参数）
-     *
+     * <p>
      * 这个功能可以支持多锁打开，不同于同时打开的方法，需要开多锁时优先使用该方法
      *
      * @param lockIds 门锁ID数组（可变长参数）
@@ -307,7 +288,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "开始逐一开启门锁: " + Arrays.toString(lockIds));
+        Log.i(TAG, "依次开启锁: " + Arrays.toString(lockIds));
 
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildOpenMultipleSequentialCommand((byte) 0x00, lockIds);
@@ -316,11 +297,7 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
         mSerialPortManager.sendBytes(command);
-
-        Log.d(TAG, "指定门锁开启完成");
         return true;
     }
 
@@ -344,11 +321,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "通道 " + channelId + " 持续打开，持续时间: " + duration + "ms");
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "持续打开通道: " + channelId);
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "通道持续打开完成");
 
         return true;
     }
@@ -372,11 +346,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        Log.d(TAG, "关闭通道: " + channelId);
-        Log.d(TAG, "发送指令: " + LockCtlBoardCmdHelper.bytesToHex(command));
-
+        Log.i(TAG, "关闭通道: " + channelId);
         mSerialPortManager.sendBytes(command);
-        Log.d(TAG, "通道关闭完成");
 
         return true;
     }
@@ -400,7 +371,6 @@ public class LockCtlBoardUtil {
         // 如果没找到起始符，清空缓冲区（防止错误数据堆积）
         if (startIndex == -1) {
             if (dataBuffer.size() > 100) { // 防止缓冲区无限增长
-                Log.w(TAG, "缓冲区中有大量无效数据，清空缓冲区");
                 dataBuffer.clear();
             }
             return;
@@ -437,9 +407,8 @@ public class LockCtlBoardUtil {
             if (mOnDataReceived != null) {
                 mOnDataReceived.onDataReceived(json);
             }
-            Log.d(TAG, "收到完整响应帧: " + json);
         } else {
-            Log.w(TAG, "收到无效的响应帧，丢弃: " + bytesToHex(frameData));
+            Log.w(TAG, "收到无效响应帧");
         }
 
         // 递归处理缓冲区中可能的其他完整帧
@@ -452,7 +421,9 @@ public class LockCtlBoardUtil {
      * 字节数组转十六进制字符串（用于日志输出）
      */
     private static String bytesToHex(byte[] bytes) {
-        if (bytes == null) return "null";
+        if (bytes == null) {
+            return "null";
+        }
         StringBuilder sb = new StringBuilder();
         for (byte b : bytes) {
             sb.append(String.format("%02X ", b));
