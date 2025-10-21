@@ -79,10 +79,7 @@
         android:padding="8dp" />
 
     <!-- 状态卡片网格 -->
-    <ScrollView
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+
 
         <GridLayout
             android:id="@+id/gridStatusCards"
@@ -95,7 +92,6 @@
 
         </GridLayout>
 
-    </ScrollView>
 
     <!-- 原始数据显示 -->
     <TextView
@@ -108,7 +104,8 @@
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="100dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:background="#FAFAFA"
         android:padding="8dp">
 

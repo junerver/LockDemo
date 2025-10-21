@@ -61,7 +61,7 @@ class StatusQueryActivity : AppCompatActivity() {
   }
 
   private fun createStatusCard(lockId: Int): View {
-    val card = layoutInflater.inflate(android.R.layout.simple_list_item_2, null) as TextView
+    val card = layoutInflater.inflate(android.R.layout.simple_list_item_1, null) as TextView
     card.apply {
       text = "锁 $lockId: 未知状态"
       textSize = 14f
