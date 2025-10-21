@@ -13,10 +13,10 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:padding="12dp"
+        android:layout_marginBottom="16dp"
         android:background="#F5F5F5"
-        android:layout_marginBottom="16dp">
+        android:orientation="horizontal"
+        android:padding="12dp">
 
         <TextView
             android:layout_width="0dp"
@@ -31,8 +31,8 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="未连接"
-            android:textSize="14sp"
             android:textColor="#FF5722"
+            android:textSize="14sp"
             android:textStyle="bold" />
 
         <Button
@@ -44,196 +44,194 @@
 
     </LinearLayout>
 
-    <!-- 控制按钮区域 -->
-    <ScrollView
+    <!-- 控制按钮和响应数据区域 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- 快速操作区域 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="快速操作"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_marginBottom="16dp"
+            android:orientation="horizontal">
 
-            <!-- 快速操作区域 -->
-            <TextView
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnOpenAllLocks"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="快速操作"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:padding="8dp" />
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="#4CAF50"
+                android:text="开启全部锁"
+                android:textColor="@color/white" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnQueryAllStatus"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="16dp">
-
-                <Button
-                    android:id="@+id/btnOpenAllLocks"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="开启全部锁"
-                    android:layout_marginEnd="8dp"
-                    android:background="#4CAF50"
-                    android:textColor="@color/white" />
-
-                <Button
-                    android:id="@+id/btnQueryAllStatus"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="查询所有状态"
-                    android:layout_marginStart="8dp"
-                    android:background="#2196F3"
-                    android:textColor="@color/white" />
-
-            </LinearLayout>
-
-            <!-- 详细操作区域 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="详细操作"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:padding="8dp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginBottom="8dp">
-
-                <Button
-                    android:id="@+id/btnSequentialOpen"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="依次开锁"
-                    android:layout_marginEnd="4dp" />
-
-                <Button
-                    android:id="@+id/btnLEDFlash"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="LED闪烁"
-                    android:layout_marginStart="4dp" />
-
-            </LinearLayout>
-
-            <!-- 单个锁操作区域 -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="单个锁操作"
-                android:textSize="16sp"
-                android:textStyle="bold"
-                android:padding="8dp" />
-
-            <GridLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:columnCount="3"
-                android:layout_marginBottom="16dp">
-
-                <Button
-                    android:id="@+id/btnLock1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 1"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock2"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 2"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock3"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 3"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock4"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 4"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock5"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 5"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock6"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 6"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnLock7"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="锁 7"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnKeepOpen"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="持续打开"
-                    android:background="#FF9800"
-                    android:textColor="@color/white"
-                    android:layout_margin="2dp" />
-
-                <Button
-                    android:id="@+id/btnCloseChannel"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_columnWeight="1"
-                    android:text="关闭通道"
-                    android:background="#F44336"
-                    android:textColor="@color/white"
-                    android:layout_margin="2dp" />
-
-            </GridLayout>
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="#2196F3"
+                android:text="查询所有状态"
+                android:textColor="@color/white" />
 
         </LinearLayout>
 
-    </ScrollView>
+        <!-- 详细操作区域 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="详细操作"
+            android:textSize="16sp"
+            android:textStyle="bold" />
 
-    <!-- 数据显示区域 -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="锁控板响应数据"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:padding="8dp" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnSequentialOpen"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="4dp"
+                android:layout_weight="1"
+                android:text="依次开锁" />
+
+            <Button
+                android:id="@+id/btnLEDFlash"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="LED闪烁" />
+
+        </LinearLayout>
+
+        <!-- 单个锁操作区域 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="8dp"
+            android:text="单个锁操作"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:columnCount="4">
+
+            <Button
+                android:id="@+id/btnLock1"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 1" />
+
+            <Button
+                android:id="@+id/btnLock2"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 2" />
+
+            <Button
+                android:id="@+id/btnLock3"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 3" />
+
+            <Button
+                android:id="@+id/btnLock4"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 4" />
+
+            <Button
+                android:id="@+id/btnLock5"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 5" />
+
+            <Button
+                android:id="@+id/btnLock6"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 6" />
+
+            <Button
+                android:id="@+id/btnLock7"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:text="锁 7" />
+
+            <Button
+                android:id="@+id/btnKeepOpen"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:background="#FF9800"
+                android:text="持续打开"
+                android:textColor="@color/white" />
+
+            <Button
+                android:id="@+id/btnCloseChannel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:layout_margin="2dp"
+                android:background="#F44336"
+                android:text="关闭通道"
+                android:textColor="@color/white" />
+
+        </GridLayout>
+
+        <!-- 响应数据显示区域 -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:background="#E8F5E8"
+            android:padding="12dp"
+            android:text="锁控板响应数据"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+
+    </LinearLayout>
 
     <ScrollView
+        android:id="@+id/scrollResponse"
         android:layout_width="match_parent"
-        android:layout_height="120dp"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:background="#FAFAFA"
         android:padding="8dp">
 
@@ -241,10 +239,11 @@
             android:id="@+id/tvResponseData"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="等待响应数据..."
-            android:textSize="12sp"
             android:fontFamily="monospace"
-            android:textColor="#333333" />
+            android:lineSpacingExtra="2dp"
+            android:text="等待响应数据..."
+            android:textColor="#333333"
+            android:textSize="12sp" />
 
     </ScrollView>
 
