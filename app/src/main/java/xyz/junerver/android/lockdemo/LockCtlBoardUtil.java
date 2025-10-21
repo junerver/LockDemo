@@ -165,23 +165,18 @@ public class LockCtlBoardUtil {
      * <p>
      * 注意：LED闪烁功能只支持接入设备为LED，如果是锁将会不断处于解锁状态，请勿使用此功能（必须重启才能重置）
      *
-     * @param lockId 门锁ID
+     * @param channelId 通道ID
      * @return 操作是否成功
      */
-    public boolean flashLockLed(int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return false;
-        }
-
+    public boolean flashLockLed(int channelId) {
         // 构造指令
-        byte[] command = LockCtlBoardCmdHelper.buildFlashChannelCommand((byte) 0x00, lockId);
+        byte[] command = LockCtlBoardCmdHelper.buildFlashChannelCommand((byte) 0x00, channelId);
         if (command == null) {
             Log.e(TAG, "构造通道闪烁指令失败");
             return false;
         }
 
-        Log.i(TAG, "LED闪烁: 通道 " + lockId);
+        Log.i(TAG, "LED闪烁: 通道 " + channelId);
         mSerialPortManager.sendBytes(command);
 
         return true;
@@ -190,23 +185,18 @@ public class LockCtlBoardUtil {
     /**
      * 3. 单独开一把锁
      *
-     * @param lockId 门锁ID
+     * @param channelId 通道ID
      * @return 操作是否成功
      */
-    public boolean openSingleLock(int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return false;
-        }
-
+    public boolean openSingleLock(int channelId) {
         // 构造指令
-        byte[] command = LockCtlBoardCmdHelper.buildOpenSingleLockCommand((byte) 0x00, lockId);
+        byte[] command = LockCtlBoardCmdHelper.buildOpenSingleLockCommand((byte) 0x00, channelId);
         if (command == null) {
             Log.e(TAG, "构造开单锁指令失败");
             return false;
         }
 
-        Log.i(TAG, "开启锁: " + lockId);
+        Log.i(TAG, "开启锁: " + channelId);
         mSerialPortManager.sendBytes(command);
 
         return true;
@@ -215,23 +205,18 @@ public class LockCtlBoardUtil {
     /**
      * 4. 查询单个门锁状态
      *
-     * @param lockId 门锁ID
+     * @param channelId 通道ID
      * @return 门锁状态（0-关闭，1-打开，-1-错误）
      */
-    public boolean getSingleLockStatus(int lockId) {
-        if (lockId < 0 || lockId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID无效: " + lockId);
-            return false;
-        }
-
+    public boolean getSingleLockStatus(int channelId) {
         // 构造指令
-        byte[] command = LockCtlBoardCmdHelper.buildGetSingleLockStatusCommand((byte) 0x00, lockId);
+        byte[] command = LockCtlBoardCmdHelper.buildGetSingleLockStatusCommand((byte) 0x00, channelId);
         if (command == null) {
             Log.e(TAG, "构造查询单锁状态指令失败");
             return false;
         }
 
-        Log.i(TAG, "查询状态: 锁 " + lockId);
+        Log.i(TAG, "查询状态: 锁 " + channelId);
         mSerialPortManager.sendBytes(command);
         return true;
     }
@@ -305,15 +290,9 @@ public class LockCtlBoardUtil {
      * 8. 通道持续打开，适用于继电器、灯具等场景，不可以用于控锁
      *
      * @param channelId 通道ID
-     * @param duration  持续时间（毫秒）
      * @return 操作是否成功
      */
-    public boolean keepChannelOpen(int channelId, long duration) {
-        if (channelId < 0 || channelId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "通道ID无效: " + channelId);
-            return false;
-        }
-
+    public boolean keepChannelOpen(int channelId) {
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildChannelKeepOpenCommand((byte) 0x00, channelId);
         if (command == null) {
@@ -334,11 +313,6 @@ public class LockCtlBoardUtil {
      * @return 操作是否成功
      */
     public boolean closeChannel(int channelId) {
-        if (channelId < 0 || channelId >= DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "通道ID无效: " + channelId);
-            return false;
-        }
-
         // 构造指令
         byte[] command = LockCtlBoardCmdHelper.buildCloseChannelCommand((byte) 0x00, channelId);
         if (command == null) {

@@ -48,7 +48,7 @@ public class LockCtlBoardCmdHelper {
     private static final byte LOCK_STATUS_ERROR = (byte) 0xFF; // 执行失败
 
     // 默认门锁总数
-    private static final int DEFAULT_LOCK_COUNT = 24;
+    private static final int DEFAULT_CHANNEL_COUNT = 24;
 
     // Gson实例用于JSON解析
     private static final Gson gson = new GsonBuilder()
@@ -124,15 +124,15 @@ public class LockCtlBoardCmdHelper {
      * 2. 通道闪烁指令
      *
      * @param boardAddress 板地址
-     * @param lockId       门锁ID
+     * @param channelId    通道ID
      * @return 指令字节数组
      */
-    public static byte[] buildFlashChannelCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID范围错误");
+    public static byte[] buildFlashChannelCommand(byte boardAddress, int channelId) {
+        if (channelId < 0 || channelId > DEFAULT_CHANNEL_COUNT) {
+            Log.e(TAG, "通道ID范围错误");
             return null;
         }
-        byte[] data = {(byte) lockId};
+        byte[] data = {(byte) channelId};
         return buildCommand(boardAddress, CMD_FLASH_CHANNEL, data);
     }
 
@@ -140,15 +140,15 @@ public class LockCtlBoardCmdHelper {
      * 3. 开单个锁指令
      *
      * @param boardAddress 板地址
-     * @param lockId       门锁ID
+     * @param channelId    通道ID
      * @return 指令字节数组
      */
-    public static byte[] buildOpenSingleLockCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID范围错误");
+    public static byte[] buildOpenSingleLockCommand(byte boardAddress, int channelId) {
+        if (channelId < 0 || channelId > DEFAULT_CHANNEL_COUNT) {
+            Log.e(TAG, "通道ID范围错误");
             return null;
         }
-        byte[] data = {(byte) lockId};
+        byte[] data = {(byte) channelId};
         return buildCommand(boardAddress, CMD_OPEN_SINGLE_LOCK, data);
     }
 
@@ -156,15 +156,15 @@ public class LockCtlBoardCmdHelper {
      * 4. 查询单个门锁状态指令
      *
      * @param boardAddress 板地址
-     * @param lockId       门锁ID
+     * @param channelId    通道ID
      * @return 指令字节数组
      */
-    public static byte[] buildGetSingleLockStatusCommand(byte boardAddress, int lockId) {
-        if (lockId < 0 || lockId > DEFAULT_LOCK_COUNT) {
-            Log.e(TAG, "门锁ID范围错误");
+    public static byte[] buildGetSingleLockStatusCommand(byte boardAddress, int channelId) {
+        if (channelId < 0 || channelId > DEFAULT_CHANNEL_COUNT) {
+            Log.e(TAG, "通道ID范围错误");
             return null;
         }
-        byte[] data = {(byte) lockId};
+        byte[] data = {(byte) channelId};
         return buildCommand(boardAddress, CMD_GET_SINGLE_STATUS, data);
     }
 
