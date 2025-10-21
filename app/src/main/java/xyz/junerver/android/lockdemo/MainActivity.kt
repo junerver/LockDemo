@@ -47,6 +47,9 @@ class MainActivity : AppCompatActivity() {
 
         // 设置按钮点击事件
         setupButtonListeners()
+
+        // 自动连接串口
+        autoConnectSerial()
     }
 
     private fun initViews() {
@@ -259,6 +262,39 @@ class MainActivity : AppCompatActivity() {
 
     private fun showToast(message: String) {
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+    }
+
+    /**
+     * 自动连接串口
+     */
+    private fun autoConnectSerial() {
+        // 检查串口是否已经连接
+        if (lockCtl.isSerialPortOpen) {
+            Log.d("MainActivity", "串口已连接，跳过自动连接")
+            updateSerialStatus(true)
+            showToast("串口已连接")
+            return
+        }
+
+        Log.d("MainActivity", "开始自动连接串口...")
+        appendResponseData("正在自动连接串口...")
+
+        // 延迟一小段时间再连接，确保UI完全初始化
+        handler.postDelayed({
+            try {
+                lockCtl.openSerialPort()
+                // 连接成功后的状态更新（实际连接状态会在监听器中更新）
+                handler.postDelayed({
+                    updateSerialStatus(true)
+                    appendResponseData("串口自动连接成功")
+                    showToast("串口自动连接成功")
+                }, 1000)
+            } catch (e: Exception) {
+                Log.e("MainActivity", "串口自动连接失败", e)
+                appendResponseData("串口自动连接失败: ${e.message}")
+                showToast("串口自动连接失败: ${e.message}")
+            }
+        }, 500) // 延迟500ms连接，确保界面完全加载
     }
 
     override fun onDestroy() {
