@@ -85,6 +85,7 @@
                 android:text="查询所有状态"
                 android:textColor="@color/white" />
 
+
         </LinearLayout>
 
         <!-- 详细操作区域 -->
@@ -117,6 +118,14 @@
                 android:layout_marginStart="4dp"
                 android:layout_weight="1"
                 android:text="LED闪烁" />
+
+            <Button
+                android:id="@+id/btnStatusQuery"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="锁状态查询" />
 
         </LinearLayout>
 

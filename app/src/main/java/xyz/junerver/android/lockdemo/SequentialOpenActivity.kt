@@ -197,9 +197,9 @@ class SequentialOpenActivity : AppCompatActivity() {
 
     // 限制日志长度
     val lines = responseLog.toString().split("\n")
-    if (lines.size > 50) {
+    if (lines.size > 250) {
       responseLog.clear()
-      for (i in lines.size - 50 until lines.size) {
+      for (i in lines.size - 250 until lines.size) {
         responseLog.append(lines[i]).append("\n")
       }
     }

@@ -240,9 +240,9 @@ class StatusQueryActivity : AppCompatActivity() {
     // 限制显示长度
     val currentText = tvRawResponseData.text.toString()
     val lines = currentText.split("\n")
-    if (lines.size > 30) {
+    if (lines.size > 250) {
       val newText = StringBuilder()
-      for (i in lines.size - 30 until lines.size) {
+      for (i in lines.size - 250 until lines.size) {
         newText.append(lines[i]).append("\n")
       }
       tvRawResponseData.text = newText.toString()

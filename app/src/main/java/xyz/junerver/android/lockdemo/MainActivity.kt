@@ -115,6 +115,12 @@ class MainActivity : AppCompatActivity() {
       startActivity(intent)
     }
 
+    // 状态查询按钮
+    findViewById<Button>(R.id.btnStatusQuery).setOnClickListener {
+      val intent = Intent(this, StatusQueryActivity::class.java)
+      startActivity(intent)
+    }
+
     // 单个锁操作按钮
     setupSingleLockButtons()
 
@@ -241,9 +247,9 @@ class MainActivity : AppCompatActivity() {
 
     // 限制日志长度，保留最近100行
     val lines = responseLog.toString().split("\n")
-    if (lines.size > 100) {
+    if (lines.size > 250) {
       responseLog.clear()
-      for (i in lines.size - 100 until lines.size) {
+      for (i in lines.size - 250 until lines.size) {
         responseLog.append(lines[i]).append("\n")
       }
     }
