@@ -28,6 +28,7 @@ public class CommandExecutionStrategy {
     public static long calculateTimeout(byte[] commandData) {
         if (commandData == null || commandData.length < 7) {
             Log.w(TAG, "指令数据格式错误，使用默认超时时间");
+            System.out.println("[DEBUG] 指令数据格式错误，使用默认超时时间");
             return 1000; // 默认1秒超时
         }
 
@@ -36,8 +37,11 @@ public class CommandExecutionStrategy {
         int baseTime = getBaseExecutionTime(commandByte, paramCount);
 
         long timeout = baseTime * TIMEOUT_SAFETY_FACTOR;
-        Log.d(TAG, String.format("指令字: 0x%02X, 参数数量: %d, 基础时间: %dms, 超时时间: %dms",
-                commandByte & 0xFF, paramCount, baseTime, timeout));
+
+        String debugMsg = String.format("[DEBUG] calculateTimeout: 指令字=0x%02X, 参数数量=%d, 基础时间=%dms, 超时时间=%dms",
+                commandByte & 0xFF, paramCount, baseTime, timeout);
+        System.out.println(debugMsg);
+        Log.d(TAG, debugMsg);
 
         return timeout;
     }
@@ -63,7 +67,8 @@ public class CommandExecutionStrategy {
             case (byte) 0x84: // 查询所有门状态
                 return QUERY_ALL_EXECUTION_TIME;
 
-            case (byte) 0x86: // 逐一开多锁
+            case (byte) 0x86: // 开全部锁（效果类似逐一开锁）
+            case (byte) 0x87: // 逐一开多锁 (实际使用)
                 // 动态计算：开锁数量 * 350ms
                 int lockCount = Math.max(1, paramCount);
                 return SINGLE_LOCK_EXECUTION_TIME * lockCount;
@@ -95,7 +100,8 @@ public class CommandExecutionStrategy {
 
         switch (commandByte) {
             case (byte) 0x80: // 同时开多锁
-            case (byte) 0x86: // 逐一开多锁
+            case (byte) 0x86: // 开全部锁（效果类似逐一开锁）
+            case (byte) 0x87: // 逐一开多锁 (实际使用)
                 // 数据域第一个字节是锁数量
                 return commandData[7] & 0xFF;
 
@@ -136,8 +142,10 @@ public class CommandExecutionStrategy {
             case (byte) 0x84:
                 return "查询所有门状态";
             case (byte) 0x85:
-                return "开全部锁";
+                return "锁控板主动上报数据";
             case (byte) 0x86:
+                return "开全部锁";
+            case (byte) 0x87:
                 return "逐一开多锁";
             case (byte) 0x88:
                 return "通道常开";
