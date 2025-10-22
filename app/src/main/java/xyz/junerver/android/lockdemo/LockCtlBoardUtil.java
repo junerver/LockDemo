@@ -2,24 +2,30 @@ package xyz.junerver.android.lockdemo;
 
 import android.util.Log;
 
-import com.kongqw.serialportlibrary.SerialPortManager;
-import com.kongqw.serialportlibrary.listener.OnOpenSerialPortListener;
-import com.kongqw.serialportlibrary.listener.OnSerialPortDataListener;
-
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import xyz.junerver.android.lockdemo.debounce.CommandSender;
+import xyz.junerver.android.lockdemo.debounce.LockCtlBoardSerialSender;
+import xyz.junerver.android.lockdemo.debounce.OnResponseListener;
 
 /**
  * 门锁控制板工具类
  * 懒加载单例模式，用于控制留样柜门锁的开关、状态查询等操作
  * 注意：指令构造功能已迁移到 LockCtlBoardCmdHelper 工具类中
+ *
+ * 改造说明：现在通过 CommandSender 接口发送指令，支持多种通信方式
  */
 public class LockCtlBoardUtil {
     private static final String TAG = "LockCtlBoardUtil";
     private static volatile LockCtlBoardUtil instance;
-    private SerialPortManager mSerialPortManager;
+
+    // 移除对直接串口管理器的依赖，改为使用CommandSender接口
+    // private SerialPortManager mSerialPortManager; // 已废弃
+
+    // 新的指令发送器接口
+    private CommandSender commandSender;
 
     private OnDataReceived mOnDataReceived;
 
@@ -36,6 +42,31 @@ public class LockCtlBoardUtil {
     // 单例私有构造函数
     private LockCtlBoardUtil() {
         // 初始化操作
+        // 默认使用串口发送器
+        this.commandSender = new LockCtlBoardSerialSender();
+
+        // 设置响应监听器适配器
+        if (this.commandSender != null) {
+            this.commandSender.setOnResponseListener(new OnResponseListener() {
+                @Override
+                public void onResponseReceived(byte[] response) {
+                    // 将新数据添加到缓冲区
+                    synchronized (dataBuffer) {
+                        for (byte b : response) {
+                            dataBuffer.add(b);
+                        }
+
+                        // 尝试从缓冲区中提取完整的响应帧
+                        extractCompleteFrames();
+                    }
+                }
+
+                @Override
+                public void onError(String error) {
+                    Log.e(TAG, "指令发送器错误: " + error);
+                }
+            });
+        }
     }
 
     /**
@@ -54,64 +85,126 @@ public class LockCtlBoardUtil {
         return instance;
     }
 
-    // 打开串口
-    public void openSerialPort() {
-        if (null == mSerialPortManager) {
-            mSerialPortManager = new SerialPortManager();
+    /**
+     * 设置指令发送器
+     * 支持动态切换通信方式（串口、网络、蓝牙等）
+     *
+     * @param commandSender 指令发送器实现
+     */
+    public void setCommandSender(CommandSender commandSender) {
+        if (commandSender == null) {
+            Log.e(TAG, "指令发送器不能为null");
+            return;
         }
-        mSerialPortManager
-                .setOnOpenSerialPortListener(new OnOpenSerialPortListener() {
-                    @Override
-                    public void onSuccess(File device) {
-                        Log.i(TAG, "串口连接成功");
+
+        // 清理旧的发送器
+        if (this.commandSender != null) {
+            this.commandSender.disconnect();
+        }
+
+        this.commandSender = commandSender;
+
+        // 设置响应监听器适配器
+        this.commandSender.setOnResponseListener(new OnResponseListener() {
+            @Override
+            public void onResponseReceived(byte[] response) {
+                // 将新数据添加到缓冲区
+                synchronized (dataBuffer) {
+                    for (byte b : response) {
+                        dataBuffer.add(b);
                     }
 
-                    @Override
-                    public void onFail(File device, Status status) {
-                        Log.e(TAG, "串口连接失败");
-                    }
-                })
-                .setOnSerialPortDataListener(new OnSerialPortDataListener() {
-
-                    @Override
-                    public void onDataReceived(byte[] bytes) {
-                        // 将新数据添加到缓冲区
-                        synchronized (dataBuffer) {
-                            for (byte b : bytes) {
-                                dataBuffer.add(b);
-                            }
-
-                            // 尝试从缓冲区中提取完整的响应帧
-                            extractCompleteFrames();
-                        }
-                    }
-
-                    @Override
-                    public void onDataSent(byte[] bytes) {
-
-                    }
-                })
-                .openSerialPort(new File("/dev/ttyS4"), 9600);
-    }
-
-    // 关闭串口
-    public void closeSerialPort() {
-        if (null != mSerialPortManager) {
-            mSerialPortManager.closeSerialPort();
-            mSerialPortManager = null;
-
-            // 清空数据缓冲区
-            synchronized (dataBuffer) {
-                dataBuffer.clear();
+                    // 尝试从缓冲区中提取完整的响应帧
+                    extractCompleteFrames();
+                }
             }
 
-            Log.i(TAG, "串口已关闭");
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "指令发送器错误: " + error);
+            }
+        });
+
+        Log.i(TAG, "指令发送器已切换为: " + commandSender.getClass().getSimpleName());
+    }
+
+    /**
+     * 获取当前使用的指令发送器
+     *
+     * @return 当前的指令发送器
+     */
+    public CommandSender getCommandSender() {
+        return commandSender;
+    }
+
+    /**
+     * 切换到默认的串口发送器
+     */
+    public void useSerialSender() {
+        setCommandSender(new LockCtlBoardSerialSender());
+    }
+
+    /**
+     * 切换到指定配置的串口发送器
+     *
+     * @param devicePath 设备路径
+     * @param baudRate   波特率
+     */
+    public void useSerialSender(String devicePath, int baudRate) {
+        setCommandSender(new LockCtlBoardSerialSender(devicePath, baudRate));
+    }
+
+    /**
+     * 获取连接状态信息
+     *
+     * @return 状态信息
+     */
+    public String getConnectionInfo() {
+        if (commandSender == null) {
+            return "未初始化指令发送器";
+        }
+
+        return String.format("LockCtlBoardUtil{sender=%s, connected=%s, bufferSize=%d}",
+                commandSender.getClass().getSimpleName(),
+                commandSender.isConnected(),
+                getBufferSize());
+    }
+
+    // 打开串口（兼容性方法，现在通过CommandSender工作）
+    public void openSerialPort() {
+        Log.i(TAG, "通过CommandSender打开串口连接");
+
+        // 如果当前使用的是串口发送器，确保其连接状态
+        if (commandSender instanceof LockCtlBoardSerialSender) {
+            LockCtlBoardSerialSender serialSender = (LockCtlBoardSerialSender) commandSender;
+            if (!serialSender.isConnected()) {
+                Log.i(TAG, "重新连接串口发送器");
+                serialSender.reconnect();
+            }
+        } else {
+            Log.w(TAG, "当前使用的不是串口发送器，忽略openSerialPort调用");
         }
     }
 
-    // 检查串口是否已打开
+    // 关闭串口（兼容性方法，现在通过CommandSender工作）
+    public void closeSerialPort() {
+        Log.i(TAG, "通过CommandSender关闭连接");
+
+        if (commandSender != null) {
+            commandSender.disconnect();
+        }
+
+        // 清空数据缓冲区
+        synchronized (dataBuffer) {
+            dataBuffer.clear();
+        }
+
+        Log.i(TAG, "连接已关闭");
+    }
+
+    // 检查串口是否已打开（兼容性方法，现在通过CommandSender工作）
     public boolean isSerialPortOpen() {
-        return mSerialPortManager != null;
+        return commandSender != null && commandSender.isConnected();
     }
 
     // 清空数据缓冲区
@@ -131,6 +224,39 @@ public class LockCtlBoardUtil {
     // 设置串口数据监听器
     public void setOnDataReceived(OnDataReceived onDataReceived) {
         this.mOnDataReceived = onDataReceived;
+    }
+
+    /**
+     * 通过CommandSender发送指令的统一方法
+     *
+     * @param command   指令数据
+     * @param operation 操作描述（用于日志）
+     * @return 操作是否成功
+     */
+    private boolean sendCommandViaSender(byte[] command, String operation) {
+        if (command == null) {
+            Log.e(TAG, "指令数据为空: " + operation);
+            return false;
+        }
+
+        if (commandSender == null) {
+            Log.e(TAG, "指令发送器未初始化: " + operation);
+            return false;
+        }
+
+        if (!commandSender.isConnected()) {
+            Log.e(TAG, "指令发送器未连接: " + operation);
+            return false;
+        }
+
+        try {
+            commandSender.sendCommand(command);
+            Log.d(TAG, "指令已发送: " + operation);
+            return true;
+        } catch (Exception e) {
+            Log.e(TAG, "发送指令失败: " + operation, e);
+            return false;
+        }
     }
 
     /**
@@ -155,9 +281,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "同时开启锁: " + Arrays.toString(lockIds));
-        mSerialPortManager.sendBytes(command);
 
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "同时开启锁: " + Arrays.toString(lockIds));
     }
 
     /**
@@ -177,9 +303,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "LED闪烁: 通道 " + channelId);
-        mSerialPortManager.sendBytes(command);
 
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "LED闪烁: 通道 " + channelId);
     }
 
     /**
@@ -197,9 +323,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "开启锁: " + channelId);
-        mSerialPortManager.sendBytes(command);
 
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "开启锁: " + channelId);
     }
 
     /**
@@ -217,8 +343,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "查询状态: 锁 " + channelId);
-        mSerialPortManager.sendBytes(command);
-        return true;
+
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "查询状态: 锁 " + channelId);
     }
 
     /**
@@ -236,8 +363,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        mSerialPortManager.sendBytes(command);
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "查询所有锁状态");
     }
 
     /**
@@ -255,8 +382,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        mSerialPortManager.sendBytes(command);
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "开启所有锁");
     }
 
     /**
@@ -282,8 +409,8 @@ public class LockCtlBoardUtil {
             return false;
         }
 
-        mSerialPortManager.sendBytes(command);
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "依次开启锁: " + Arrays.toString(lockIds));
     }
 
     /**
@@ -301,9 +428,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "持续打开通道: " + channelId);
-        mSerialPortManager.sendBytes(command);
 
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "持续打开通道: " + channelId);
     }
 
     /**
@@ -321,9 +448,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "关闭通道: " + channelId);
-        mSerialPortManager.sendBytes(command);
 
-        return true;
+        // 使用统一的发送方法
+        return sendCommandViaSender(command, "关闭通道: " + channelId);
     }
 
     /**

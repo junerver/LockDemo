@@ -20,6 +20,7 @@
             android:layout_height="wrap_content"
             android:text="← 返回"
             android:textSize="14sp"
+            android:textColor="@color/black"
             android:background="?android:attr/selectableItemBackground" />
 
         <TextView
