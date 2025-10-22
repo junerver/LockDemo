@@ -202,8 +202,8 @@ class CommandExecutionStrategyTest {
       0x82.toByte() to "开单个锁",
       0x83.toByte() to "查询单个门状态",
       0x84.toByte() to "查询所有门状态",
-      0x85.toByte() to "开全部锁",
-      0x86.toByte() to "逐一开多锁",
+      0x85.toByte() to "锁控板主动上报数据",
+      0x86.toByte() to "开全部锁",
       0x88.toByte() to "通道常开",
       0x89.toByte() to "通道关闭"
     )

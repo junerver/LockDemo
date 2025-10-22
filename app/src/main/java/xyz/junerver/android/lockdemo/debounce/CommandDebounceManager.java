@@ -93,13 +93,17 @@ public class CommandDebounceManager {
                 commandQueue.offer(queuedCommand);
                 totalCommandsSent++;
 
-                Log.d(TAG, String.format("指令入队: %s, 队列大小: %d",
-                        queuedCommand.getDescription(), commandQueue.size()));
+                Log.i(TAG, String.format("指令入队: %s, 队列大小: %d, 当前执行指令: %s",
+                        queuedCommand.getDescription(), commandQueue.size(),
+                        currentExecutingCommand != null ? currentExecutingCommand.getDescription() : "无"));
             }
 
             // 如果当前没有执行中的指令，启动处理流程
             if (currentExecutingCommand == null) {
+                Log.i(TAG, "启动处理流程，提交 processNextCommand 任务");
                 executor.submit(this::processNextCommand);
+            } else {
+                Log.i(TAG, "当前有指令在执行，等待队列处理");
             }
 
         } catch (Exception e) {
@@ -147,7 +151,9 @@ public class CommandDebounceManager {
             }
         }
 
-        Log.d(TAG, "开始执行指令: " + currentExecutingCommand.getDescription());
+        Log.i(TAG, "开始执行指令: " + currentExecutingCommand.getDescription() +
+                ", 当前总发送数: " + totalCommandsSent +
+                ", 当前总完成数: " + totalCommandsCompleted);
 
         try {
             // 1. 发送指令
@@ -170,13 +176,22 @@ public class CommandDebounceManager {
      */
     private void scheduleTimeout(QueuedCommand command) {
         long timeout = command.getTimeout();
+        Log.i(TAG, String.format("设置超时: %s, 超时时间: %dms", command.getDescription(), timeout));
+
         timeoutExecutor.schedule(() -> {
+            Log.i(TAG, String.format("检查超时: %s, 当前指令=%s, 已完成=%s",
+                    command.getDescription(),
+                    currentExecutingCommand != null ? currentExecutingCommand.getDescription() : "无",
+                    command.isCompleted()));
+
             if (currentExecutingCommand == command && !command.isCompleted()) {
                 Log.w(TAG, String.format("指令执行超时: %s, 超时时间: %dms",
                         command.getDescription(), timeout));
                 totalTimeouts++;
                 command.setTimedOut(true);
                 completeCurrentCommand(false, "指令执行超时");
+            } else {
+                Log.d(TAG, "超时检查通过，指令已完成或已更换");
             }
         }, timeout, TimeUnit.MILLISECONDS);
     }
@@ -187,17 +202,19 @@ public class CommandDebounceManager {
      * @param response 响应数据
      */
     private void handleResponse(byte[] response) {
+        Log.i(TAG, "收到响应，当前执行指令: " +
+                (currentExecutingCommand != null ? currentExecutingCommand.getDescription() : "无"));
+
         if (currentExecutingCommand == null) {
             Log.w(TAG, "收到响应但当前无执行中的指令");
             return;
         }
 
-        Log.d(TAG, "收到响应，当前执行指令: " + currentExecutingCommand.getDescription());
-
         // 检查响应是否匹配当前执行的指令
-        if (ResponseMatcher.isResponseForCommand(response, currentExecutingCommand.getCommandData())) {
-            Log.d(TAG, "响应匹配当前指令");
+        boolean isMatch = ResponseMatcher.isResponseForCommand(response, currentExecutingCommand.getCommandData());
+        Log.i(TAG, "响应匹配检查: " + (isMatch ? "匹配" : "不匹配"));
 
+        if (isMatch) {
             boolean success = ResponseMatcher.isSuccessResponse(response);
             String message = ResponseMatcher.getResponseStatusDescription(response);
 
@@ -242,6 +259,10 @@ public class CommandDebounceManager {
 
             // 通知监听器
             OnCommandListener listener = completedCommand.getListener();
+
+            Log.i(TAG, "指令完成: " + completedCommand.getDescription() +
+                    ", 完成总数: " + totalCommandsCompleted +
+                    ", 监听器: " + (listener != null ? "有" : "无"));
             if (listener != null) {
                 try {
                     if (success) {

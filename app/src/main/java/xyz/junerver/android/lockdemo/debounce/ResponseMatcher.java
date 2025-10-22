@@ -45,7 +45,7 @@ public class ResponseMatcher {
 
         boolean isMatch = responseCmd == commandCmd && responseAddr == commandAddr;
 
-        Log.d(TAG, String.format("响应匹配检查: 指令字=0x%02X->0x%02X, 板地址=0x%02X->0x%02X, 匹配=%s",
+        Log.i(TAG, String.format("响应匹配检查: 指令字=0x%02X->0x%02X, 板地址=0x%02X->0x%02X, 匹配=%s",
                 commandCmd & 0xFF, responseCmd & 0xFF,
                 commandAddr & 0xFF, responseAddr & 0xFF, isMatch));
 

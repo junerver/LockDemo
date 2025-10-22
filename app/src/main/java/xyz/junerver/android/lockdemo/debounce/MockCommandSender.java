@@ -19,6 +19,7 @@ public class MockCommandSender implements CommandSender {
 
     // 配置参数
     private long defaultResponseDelay = 100; // 默认响应延迟（毫秒）
+    private boolean useCustomDelay = false;  // 是否使用自定义延迟（用于测试）
     private boolean simulateErrors = false;  // 是否模拟错误
     private double errorRate = 0.0;          // 错误率（0.0-1.0）
 
@@ -114,6 +115,11 @@ public class MockCommandSender implements CommandSender {
      * @return 延迟时间（毫秒）
      */
     private long calculateResponseDelay(byte[] command) {
+        // 如果设置了自定义延迟，直接返回（用于测试超时等场景）
+        if (useCustomDelay) {
+            return defaultResponseDelay;
+        }
+
         if (command == null || command.length < 7) {
             return defaultResponseDelay;
         }
@@ -135,6 +141,7 @@ public class MockCommandSender implements CommandSender {
                 return 350 + (long) (Math.random() * 100); // 350-450ms
 
             case (byte) 0x86: // 逐一开多锁
+            case (byte) 0x87: // 逐一开多锁 (实际使用)
                 int lockCount = command.length > 7 ? command[7] & 0xFF : 1;
                 return (350 * lockCount) + (long) (Math.random() * 100); // 基础时间 + 随机延迟
 
@@ -331,15 +338,21 @@ public class MockCommandSender implements CommandSender {
 
         // 使用调度器异步发送响应
         scheduler.schedule(() -> {
+            Log.i(TAG, String.format("发送响应: 延迟=%dms, 指令字=0x%02X, 监听器=%s",
+                    responseDelay, finalCommand.length > 6 ? finalCommand[6] & 0xFF : 0,
+                    responseListener != null ? "有" : "无"));
+
             if (shouldSimulateError()) {
                 Log.w(TAG, "模拟错误响应");
                 if (responseListener != null) {
                     responseListener.onError("模拟的通信错误");
                 }
             } else {
-                Log.d(TAG, "发送模拟响应");
+                Log.i(TAG, "发送成功响应");
                 if (responseListener != null) {
                     responseListener.onResponseReceived(response);
+                } else {
+                    Log.w(TAG, "响应监听器为null，无法发送响应");
                 }
             }
         }, responseDelay, TimeUnit.MILLISECONDS);
@@ -398,6 +411,15 @@ public class MockCommandSender implements CommandSender {
      */
     public void setDefaultResponseDelay(long delay) {
         this.defaultResponseDelay = Math.max(0, delay);
+        this.useCustomDelay = true;  // 标记使用自定义延迟
+    }
+
+    /**
+     * 重置为自动延迟模式（根据指令类型自动计算延迟）
+     */
+    public void resetToAutoDelay() {
+        this.useCustomDelay = false;
+        this.defaultResponseDelay = 100;
     }
 
     public void setSimulateErrors(boolean simulateErrors) {
