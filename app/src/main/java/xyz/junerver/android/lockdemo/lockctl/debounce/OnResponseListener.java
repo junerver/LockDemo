@@ -1,4 +1,4 @@
-package xyz.junerver.android.lockdemo.debounce;
+package xyz.junerver.android.lockdemo.lockctl.debounce;
 
 /**
  * 响应监听接口

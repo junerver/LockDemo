@@ -1,4 +1,4 @@
-package xyz.junerver.android.lockdemo;
+package xyz.junerver.android.lockdemo.lockctl;
 
 import com.google.gson.annotations.SerializedName;
 import java.util.List;

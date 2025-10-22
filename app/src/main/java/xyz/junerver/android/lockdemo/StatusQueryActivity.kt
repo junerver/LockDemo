@@ -13,7 +13,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.google.gson.JsonSyntaxException
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelStatus
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.ChannelStatus
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardUtil
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

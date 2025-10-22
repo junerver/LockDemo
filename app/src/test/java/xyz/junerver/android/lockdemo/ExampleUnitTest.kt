@@ -4,6 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardCmdHelper
 
 /**
  * 门锁控制板指令构造单元测试

@@ -1,4 +1,4 @@
-package xyz.junerver.android.lockdemo.debounce;
+package xyz.junerver.android.lockdemo.lockctl.debounce;
 
 /**
  * 指令执行监听器

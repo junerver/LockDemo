@@ -1,4 +1,4 @@
-package xyz.junerver.android.lockdemo;
+package xyz.junerver.android.lockdemo.lockctl;
 
 import android.util.Log;
 
@@ -9,12 +9,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.AllLocksStatusResponse;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.BaseResponse;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelResponse;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.ChannelStatus;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.LockStatusResponse;
-import xyz.junerver.android.lockdemo.LockCtlBoardResponseModels.StatusUploadResponse;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.AllLocksStatusResponse;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.BaseResponse;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.ChannelResponse;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.ChannelStatus;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.LockStatusResponse;
+import xyz.junerver.android.lockdemo.lockctl.LockCtlBoardResponseModels.StatusUploadResponse;
 
 /**
  * 门锁控制板指令构造辅助工具类

@@ -1,4 +1,4 @@
-package xyz.junerver.android.lockdemo;
+package xyz.junerver.android.lockdemo.lockctl;
 
 import android.util.Log;
 
@@ -6,9 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import xyz.junerver.android.lockdemo.debounce.CommandSender;
-import xyz.junerver.android.lockdemo.debounce.LockCtlBoardSerialSender;
-import xyz.junerver.android.lockdemo.debounce.OnResponseListener;
+import xyz.junerver.android.lockdemo.lockctl.debounce.CommandSender;
+import xyz.junerver.android.lockdemo.lockctl.debounce.LockCtlBoardSerialSender;
+import xyz.junerver.android.lockdemo.lockctl.debounce.OnResponseListener;
 
 /**
  * 门锁控制板工具类
