@@ -36,6 +36,11 @@ android {
 }
 
 dependencies {
+  testImplementation(libs.junit)
+  androidTestImplementation(libs.androidx.junit)
+  androidTestImplementation(libs.androidx.espresso.core)
+  testImplementation(kotlin("test"))
+  testImplementation("org.robolectric:robolectric:4.11.1")
 
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
@@ -45,10 +50,6 @@ dependencies {
 
   // 添加Gson支持JSON解析
   implementation("com.google.code.gson:gson:2.10.1")
-
-  testImplementation(libs.junit)
-  androidTestImplementation(libs.androidx.junit)
-  androidTestImplementation(libs.androidx.espresso.core)
-  testImplementation(kotlin("test"))
+  // 串口通信库
   implementation("com.github.kongqw:AndroidSerialPort:1.0.0")
 }

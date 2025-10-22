@@ -45,43 +45,6 @@ The application implements a comprehensive lock control board protocol supportin
 - **JSON Response Parsing**: Structured response data parsing with error handling
 - **Checksum Validation**: XOR-based data integrity verification
 
-## Build Commands
-
-### Building the Project
-```bash
-# Build the project (using Gradle wrapper)
-./gradlew build
-
-# Build debug APK
-./gradlew assembleDebug
-
-# Build release APK
-./gradlew assembleRelease
-```
-
-### Running Tests
-```bash
-# Run unit tests
-./gradlew test
-
-# Run instrumented tests (requires connected device/emulator)
-./gradlew connectedAndroidTest
-```
-
-### Installation
-```bash
-# Install debug APK to connected device/emulator
-./gradlew installDebug
-
-# Install release APK to connected device/emulator
-./gradlew installRelease
-```
-
-### Cleaning
-```bash
-# Clean build artifacts
-./gradlew clean
-```
 
 ## Project Structure
 
