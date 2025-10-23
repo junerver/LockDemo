@@ -133,12 +133,15 @@ public class CommandDebounceManager {
      * 设置响应监听器
      */
     private void setupResponseListener() {
+        OnResponseListener originalResponseListener = underlyingSender.getOnResponseListener();
         underlyingSender.setOnResponseListener(new OnResponseListener() {
             @Override
             public void onResponseReceived(byte[] response) {
                 // 先进行内部处理（防抖控制）
                 handleResponse(response);
-
+                if (originalResponseListener != null) {
+                    originalResponseListener.onResponseReceived(response);
+                }
                 // 然后转发给外部监听器（透明层）
                 if (externalResponseListener != null) {
                     try {
@@ -153,6 +156,10 @@ public class CommandDebounceManager {
             public void onError(String error) {
                 // 先进行内部处理（防抖控制）
                 handleError(error);
+
+                if (originalResponseListener != null) {
+                    originalResponseListener.onError(error);
+                }
 
                 // 然后转发给外部监听器（透明层）
                 if (externalResponseListener != null) {

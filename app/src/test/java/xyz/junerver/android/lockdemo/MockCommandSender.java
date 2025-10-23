@@ -298,6 +298,11 @@ public class MockCommandSender implements CommandSender {
     }
 
     @Override
+    public OnResponseListener getOnResponseListener() {
+        return this.responseListener;
+    }
+
+    @Override
     public boolean isConnected() {
         return isConnected.get();
     }

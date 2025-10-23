@@ -21,6 +21,10 @@ public interface CommandSender {
     void setOnResponseListener(OnResponseListener listener);
 
     /**
+     * 响应监听器
+     */
+    OnResponseListener getOnResponseListener();
+    /**
      * 检查连接状态
      *
      * @return 是否已连接

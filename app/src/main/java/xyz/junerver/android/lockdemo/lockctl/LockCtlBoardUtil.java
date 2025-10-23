@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import xyz.junerver.android.lockdemo.lockctl.debounce.CommandDebounceManager;
 import xyz.junerver.android.lockdemo.lockctl.debounce.CommandSender;
 import xyz.junerver.android.lockdemo.lockctl.debounce.LockCtlBoardSerialSender;
 import xyz.junerver.android.lockdemo.lockctl.debounce.OnResponseListener;
@@ -28,6 +29,10 @@ public class LockCtlBoardUtil {
     private CommandSender commandSender;
 
     private OnDataReceived mOnDataReceived;
+
+    private CommandDebounceManager commandDebounceManager;
+
+    private boolean useDebounce = false;
 
     // 数据缓冲区，用于处理分包数据
     private final List<Byte> dataBuffer = new ArrayList<>();
@@ -67,6 +72,8 @@ public class LockCtlBoardUtil {
                 }
             });
         }
+
+        this.commandDebounceManager = new CommandDebounceManager(commandSender);
     }
 
     /**
@@ -85,89 +92,12 @@ public class LockCtlBoardUtil {
         return instance;
     }
 
-    /**
-     * 设置指令发送器
-     * 支持动态切换通信方式（串口、网络、蓝牙等）
-     *
-     * @param commandSender 指令发送器实现
-     */
-    public void setCommandSender(CommandSender commandSender) {
-        if (commandSender == null) {
-            Log.e(TAG, "指令发送器不能为null");
-            return;
-        }
-
-        // 清理旧的发送器
-        if (this.commandSender != null) {
-            this.commandSender.disconnect();
-        }
-
-        this.commandSender = commandSender;
-
-        // 设置响应监听器适配器
-        this.commandSender.setOnResponseListener(new OnResponseListener() {
-            @Override
-            public void onResponseReceived(byte[] response) {
-                // 将新数据添加到缓冲区
-                synchronized (dataBuffer) {
-                    for (byte b : response) {
-                        dataBuffer.add(b);
-                    }
-
-                    // 尝试从缓冲区中提取完整的响应帧
-                    extractCompleteFrames();
-                }
-            }
-
-            @Override
-            public void onError(String error) {
-                Log.e(TAG, "指令发送器错误: " + error);
-            }
-        });
-
-        Log.i(TAG, "指令发送器已切换为: " + commandSender.getClass().getSimpleName());
+    public void setUseDebounce(boolean useDebounce) {
+        this.useDebounce = useDebounce;
     }
 
-    /**
-     * 获取当前使用的指令发送器
-     *
-     * @return 当前的指令发送器
-     */
-    public CommandSender getCommandSender() {
-        return commandSender;
-    }
-
-    /**
-     * 切换到默认的串口发送器
-     */
-    public void useSerialSender() {
-        setCommandSender(new LockCtlBoardSerialSender());
-    }
-
-    /**
-     * 切换到指定配置的串口发送器
-     *
-     * @param devicePath 设备路径
-     * @param baudRate   波特率
-     */
-    public void useSerialSender(String devicePath, int baudRate) {
-        setCommandSender(new LockCtlBoardSerialSender(devicePath, baudRate));
-    }
-
-    /**
-     * 获取连接状态信息
-     *
-     * @return 状态信息
-     */
-    public String getConnectionInfo() {
-        if (commandSender == null) {
-            return "未初始化指令发送器";
-        }
-
-        return String.format("LockCtlBoardUtil{sender=%s, connected=%s, bufferSize=%d}",
-                commandSender.getClass().getSimpleName(),
-                commandSender.isConnected(),
-                getBufferSize());
+    public boolean isUseDebounce() {
+        return useDebounce;
     }
 
     // 打开串口（兼容性方法，现在通过CommandSender工作）
@@ -250,7 +180,11 @@ public class LockCtlBoardUtil {
         }
 
         try {
-            commandSender.sendCommand(command);
+            if (useDebounce) {
+                commandDebounceManager.sendCommand(command, null);
+            } else {
+                commandSender.sendCommand(command);
+            }
             Log.d(TAG, "指令已发送: " + operation);
             return true;
         } catch (Exception e) {
