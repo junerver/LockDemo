@@ -41,6 +41,9 @@ public class CommandDebounceManager {
     private volatile QueuedCommand currentExecutingCommand = null;
     private final AtomicBoolean isShutdown = new AtomicBoolean(false);
 
+    // 外部响应监听器（透明层支持）
+    private volatile OnResponseListener externalResponseListener = null;
+
     // 统计信息
     private volatile long totalCommandsSent = 0;
     private volatile long totalCommandsCompleted = 0;
@@ -61,6 +64,17 @@ public class CommandDebounceManager {
         setupResponseListener();
 
         Log.i(TAG, "指令防抖管理器已初始化");
+    }
+
+    /**
+     * 设置外部响应监听器
+     * 防抖管理器将作为透明层，在内部处理响应后转发给外部监听器
+     *
+     * @param externalResponseListener 外部响应监听器，可以为null
+     */
+    public void setOnResponseListener(OnResponseListener externalResponseListener) {
+        this.externalResponseListener = externalResponseListener;
+        Log.i(TAG, "外部响应监听器" + (externalResponseListener != null ? "已设置" : "已清除"));
     }
 
     /**
@@ -117,19 +131,37 @@ public class CommandDebounceManager {
 
     /**
      * 设置响应监听器
-     *
-     * @param listener 响应监听器
      */
     private void setupResponseListener() {
         underlyingSender.setOnResponseListener(new OnResponseListener() {
             @Override
             public void onResponseReceived(byte[] response) {
+                // 先进行内部处理（防抖控制）
                 handleResponse(response);
+
+                // 然后转发给外部监听器（透明层）
+                if (externalResponseListener != null) {
+                    try {
+                        externalResponseListener.onResponseReceived(response);
+                    } catch (Exception e) {
+                        Log.e(TAG, "转发响应给外部监听器失败", e);
+                    }
+                }
             }
 
             @Override
             public void onError(String error) {
+                // 先进行内部处理（防抖控制）
                 handleError(error);
+
+                // 然后转发给外部监听器（透明层）
+                if (externalResponseListener != null) {
+                    try {
+                        externalResponseListener.onError(error);
+                    } catch (Exception e) {
+                        Log.e(TAG, "转发错误给外部监听器失败", e);
+                    }
+                }
             }
         });
     }

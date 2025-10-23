@@ -127,6 +127,15 @@
                 android:layout_weight="1"
                 android:text="锁状态查询" />
 
+            <!-- 并发防抖测试 -->
+            <Button
+                android:id="@+id/btnConcurrentDebounce"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:text="并发防抖" />
+
         </LinearLayout>
 
         <!-- 单个锁操作区域 -->
