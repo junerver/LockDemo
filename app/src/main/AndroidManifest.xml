@@ -45,6 +45,11 @@
             android:name=".DebounceTestActivity"
             android:label="防抖测试"
             android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".DeviceCheckActivity"
+            android:label="设备自检"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

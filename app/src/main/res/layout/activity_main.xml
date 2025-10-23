@@ -136,6 +136,17 @@
                 android:layout_weight="1"
                 android:text="并发防抖" />
 
+            <!-- 设备自检 -->
+            <Button
+                android:id="@+id/btnDeviceCheck"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="4dp"
+                android:layout_weight="1"
+                android:background="#9C27B0"
+                android:text="设备自检"
+                android:textColor="@color/white" />
+
         </LinearLayout>
 
         <!-- 单个锁操作区域 -->

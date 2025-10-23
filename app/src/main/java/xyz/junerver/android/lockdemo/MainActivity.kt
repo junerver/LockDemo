@@ -130,6 +130,12 @@ class MainActivity : AppCompatActivity() {
       startActivity(intent)
     }
 
+    // 设备自检按钮
+    findViewById<Button>(R.id.btnDeviceCheck).setOnClickListener {
+      val intent = Intent(this, DeviceCheckActivity::class.java)
+      startActivity(intent)
+    }
+
     // 单个锁操作按钮
     setupSingleLockButtons()
 
