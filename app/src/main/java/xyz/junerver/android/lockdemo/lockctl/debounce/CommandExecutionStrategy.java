@@ -114,7 +114,7 @@ public class CommandExecutionStrategy {
                 return 1;
 
             case (byte) 0x84: // 查询所有门状态
-            case (byte) 0x85: // 开全部锁
+            case (byte) 0x85: // 锁控板主动上报数据
                 // 这些指令没有参数
                 return 0;
 

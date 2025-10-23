@@ -12,7 +12,7 @@ for efficient space utilization.
 
 ## Key Features
 
-- **Serial Communication**: RS232 serial port communication with door lock control boards
+- **Serial Communication**: RS485 serial port communication with door lock control boards
 - **Lock Control**: Support for 7 door locks (1-7) with individual and batch operations
 - **Multiple Operation Modes**: Sequential and simultaneous lock opening capabilities
 - **LED Control**: Individual LED flashing functionality for each channel
@@ -28,13 +28,14 @@ for efficient space utilization.
 The application implements a comprehensive lock control board protocol supporting instructions
 0x80-0x89:
 
-- **0x80**: Open multiple locks simultaneously (max 2 locks)
+- **0x80**: Open multiple locks simultaneously
 - **0x81**: Channel LED flashing
 - **0x82**: Open single lock
 - **0x83**: Query single lock status
 - **0x84**: Query all locks status
-- **0x85**: Open all locks sequentially
-- **0x86**: Open multiple locks sequentially
+- **0x85**: Lock status active report (used by lock control board to report status when door lock opens/closes)
+- **0x86**: Open all locks sequentially
+- **0x87**: Open multiple locks sequentially
 - **0x88**: Channel keep open
 - **0x89**: Close channel
 
@@ -102,6 +103,7 @@ Core Android dependencies managed through version catalog:
 - **Device Path**: /dev/ttyS4
 - **Baud Rate**: 9600
 - **Protocol**: Custom lock control board protocol with frame validation
+- **Communication**: RS485 serial communication
 - **Data Format**: Binary with XOR checksum validation
 - **Response Format**: JSON-structured response data
 
@@ -119,8 +121,8 @@ Core Android dependencies managed through version catalog:
 - `closeSerialPort()`: Close serial connection and clear buffers
 - `openSingleLock(int)`: Open individual lock
 - `openMultipleLocksSimultaneously(int...)`: Open multiple locks simultaneously
-- `openMultipleLocksSequentially(int...)`: Open multiple locks sequentially
-- `openAllLocksSequentially()`: Open all locks sequentially
+- `openMultipleLocksSequentially(int...)`: Open multiple locks sequentially (0x87 instruction)
+- `openAllLocksSequentially()`: Open all locks sequentially (0x86 instruction)
 - `flashLockLed(int)`: Flash LED for specific channel
 - `keepChannelOpen(int, long)`: Keep channel open for specified duration
 - `closeChannel(int)`: Close specific channel
@@ -136,8 +138,8 @@ Core Android dependencies managed through version catalog:
 - `buildCloseChannelCommand()`: Construct 0x89 instruction
 - `buildGetSingleLockStatusCommand()`: Construct 0x83 instruction
 - `buildGetAllLocksStatusCommand()`: Construct 0x84 instruction
-- `buildOpenAllLocksCommand()`: Construct 0x85 instruction
-- `buildOpenMultipleSequentialCommand()`: Construct 0x86 instruction
+- `buildOpenAllLocksCommand()`: Construct 0x86 instruction
+- `buildOpenMultipleSequentialCommand()`: Construct 0x87 instruction
 - `parseResponseToJson()`: Parse binary responses to JSON format
 - `validateResponse()`: Validate response frame integrity
 
@@ -158,7 +160,7 @@ Core Android dependencies managed through version catalog:
 The project includes comprehensive unit tests for all lock control instructions:
 
 - **Command Construction Tests**: Verify correct byte-level command construction for all
-  instructions (0x80-0x89)
+  instructions (0x80-0x84, 0x86-0x89)
 - **Response Parsing Tests**: Test JSON response parsing for all supported response types
 - **Checksum Validation Tests**: Verify XOR checksum calculation and validation
 - **Edge Case Tests**: Test boundary conditions and error scenarios
