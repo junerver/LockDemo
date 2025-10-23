@@ -42,15 +42,16 @@ class MainActivity : AppCompatActivity() {
 
     // 初始化UI组件
     initViews()
-
-    // 设置串口数据监听器
-    setupSerialListener()
-
     // 设置按钮点击事件
     setupButtonListeners()
-
     // 自动连接串口
     autoConnectSerial()
+  }
+
+  override fun onResume() {
+    super.onResume()
+    // 设置串口数据监听器
+    setupSerialListener()
   }
 
   private fun initViews() {
@@ -62,6 +63,7 @@ class MainActivity : AppCompatActivity() {
   private fun setupSerialListener() {
     lockCtl.setOnDataReceived(object : LockCtlBoardUtil.OnDataReceived {
       override fun onDataReceived(json: String) {
+        Log.d("MainActivity", "onDataReceived: $json")
         // 在主线程更新UI
         handler.post {
           appendResponseData(json)
