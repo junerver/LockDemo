@@ -40,6 +40,11 @@
             android:name=".StatusQueryActivity"
             android:label="锁状态查询"
             android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".DebounceTestActivity"
+            android:label="防抖测试"
+            android:parentActivityName=".MainActivity" />
     </application>
 
 </manifest>

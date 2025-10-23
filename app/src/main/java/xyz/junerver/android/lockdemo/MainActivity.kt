@@ -122,6 +122,12 @@ class MainActivity : AppCompatActivity() {
       startActivity(intent)
     }
 
+    // 并发防抖测试按钮
+    findViewById<Button>(R.id.btnConcurrentDebounce).setOnClickListener {
+      val intent = Intent(this, DebounceTestActivity::class.java)
+      startActivity(intent)
+    }
+
     // 单个锁操作按钮
     setupSingleLockButtons()
 
