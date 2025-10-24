@@ -1,6 +1,8 @@
 package xyz.junerver.android.lockdemo.lockctl;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -50,6 +52,12 @@ public class LockCtlBoardUtil {
     private static final byte[] FRAME_HEADER = {0x57, 0x4B, 0x4C, 0x59};
     private static final int MIN_LOCK_ID = 1;
     private static final int MAX_LOCK_ID = 12;
+
+    public static final String TYPE_CONNECT_SUCCESSES = "connect_successes";
+    public static final String TYPE_CONNECT_FAILED = "connect_failed";
+    public static final String TYPE_CONNECT_CLOSED = "connect_closed";
+    public static final String TYPE_DETECT_SUCCESSES = "detect_successes";
+    public static final String TYPE_DETECT_FAILED = "detect_failed";
 
     public interface OnDataReceived {
         void onDataReceived(String json);
@@ -103,6 +111,175 @@ public class LockCtlBoardUtil {
             }
         }
         return instance;
+    }
+
+    /**
+     * 简化的初始化方法 - 自动检测串口并连接
+     * 将串口检测、连接等内部逻辑封装，对外只提供统一的响应回调
+     *
+     * @param context 应用上下文
+     */
+    public void initialize(Context context) {
+        Log.i(TAG, "开始简化初始化流程");
+
+        // 使用自动检测方式初始化
+        initWithAutoDetection(context, new OnInitListener() {
+            @Override
+            public void onSuccess(String message) {
+                Log.i(TAG, "串口检测成功: " + message);
+
+                // 发送关键状态通知：串口检测成功
+                sendStatusNotification(TYPE_DETECT_SUCCESSES, message);
+
+                // 自动连接串口
+                autoConnectSerialPort();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "串口检测失败: " + error);
+                // 检测失败也通知上层
+                sendStatusNotification(TYPE_DETECT_FAILED, error);
+            }
+
+            @Override
+            public void onProgress(String message) {
+                Log.d(TAG, "检测进度: " + message);
+                // 进度信息只记录日志，不通知上层
+            }
+        });
+    }
+
+    /**
+     * 简化的初始化方法 - 使用指定串口并连接
+     *
+     * @param context  应用上下文
+     * @param portPath 串口路径
+     */
+    public void initialize(Context context, String portPath) {
+        Log.i(TAG, "开始简化初始化流程，指定串口: " + portPath);
+
+        // 使用指定串口方式初始化
+        initWithSpecifiedPort(context, portPath, new OnInitListener() {
+            @Override
+            public void onSuccess(String message) {
+                Log.i(TAG, "指定串口初始化成功: " + message);
+
+                // 发送关键状态通知：串口检测成功
+                sendStatusNotification(TYPE_DETECT_SUCCESSES, message);
+
+                // 自动连接串口
+                autoConnectSerialPort();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "指定串口初始化失败: " + error);
+                // 初始化失败也通知上层
+                sendStatusNotification(TYPE_DETECT_FAILED, error);
+            }
+
+            @Override
+            public void onProgress(String message) {
+                Log.d(TAG, "初始化进度: " + message);
+                // 进度信息只记录日志，不通知上层
+            }
+        });
+    }
+
+    /**
+     * 强制重新检测并初始化
+     *
+     * @param context 应用上下文
+     */
+    public void forceReinitialize(Context context) {
+        Log.i(TAG, "开始强制重新初始化");
+
+        forceRedetectAndInit(context, new OnInitListener() {
+            @Override
+            public void onSuccess(String message) {
+                Log.i(TAG, "强制重新初始化成功: " + message);
+
+                // 发送关键状态通知：串口检测成功
+                sendStatusNotification(TYPE_DETECT_SUCCESSES, message);
+
+                // 自动连接串口
+                autoConnectSerialPort();
+            }
+
+            @Override
+            public void onError(String error) {
+                Log.e(TAG, "强制重新初始化失败: " + error);
+                // 重新初始化失败也通知上层
+                sendStatusNotification(TYPE_DETECT_FAILED, error);
+            }
+
+            @Override
+            public void onProgress(String message) {
+                Log.d(TAG, "重新初始化进度: " + message);
+                // 进度信息只记录日志，不通知上层
+            }
+        });
+    }
+
+    /**
+     * 自动连接串口（内部方法）
+     */
+    private void autoConnectSerialPort() {
+        try {
+            Log.i(TAG, "开始自动连接串口");
+
+            openSerialPort();
+
+            // 延迟检查连接状态，确保连接建立
+            Handler handler = new Handler(Looper.getMainLooper());
+            handler.postDelayed(() -> {
+                if (isSerialPortOpen()) {
+                    Log.i(TAG, "串口连接成功");
+
+                    // 发送关键状态通知：连接成功
+                    sendStatusNotification(TYPE_CONNECT_SUCCESSES, "门锁控制板已连接，可以开始使用");
+//
+//                    // 查询所有锁状态作为初始化完成的验证
+//                    getAllLocksStatus();
+                } else {
+                    Log.e(TAG, "串口连接失败");
+
+                    // 发送关键状态通知：连接失败
+                    sendStatusNotification(TYPE_CONNECT_FAILED, "串口连接失败，请检查设备连接");
+                }
+            }, 1000);
+
+        } catch (Exception e) {
+            Log.e(TAG, "自动连接串口异常", e);
+
+            // 发送关键状态通知：连接异常
+            sendStatusNotification(TYPE_CONNECT_FAILED, "串口连接异常: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 发送状态通知（内部方法）
+     *
+     * @param status  状态类型
+     * @param message 详细消息
+     */
+    private void sendStatusNotification(String status, String message) {
+        if (mOnDataReceived != null) {
+            try {
+                // 构造状态通知的JSON格式，使用英文字段
+                String statusJson = String.format(
+                        "{\"type\":\"connection\",\"event\":\"%s\",\"message\":\"%s\"}",
+                        status, message
+                );
+
+                // 通过统一的响应回调发送状态通知
+                mOnDataReceived.onDataReceived(statusJson);
+
+            } catch (Exception e) {
+                Log.e(TAG, "发送状态通知失败", e);
+            }
+        }
     }
 
     /**
@@ -344,6 +521,9 @@ public class LockCtlBoardUtil {
         }
 
         Log.i(TAG, "连接已关闭");
+
+        // 发送关键状态通知：串口关闭
+        sendStatusNotification(TYPE_CONNECT_CLOSED, "门锁控制板连接已断开");
     }
 
     // 检查串口是否已打开（兼容性方法，现在通过CommandSender工作）

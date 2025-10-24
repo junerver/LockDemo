@@ -67,10 +67,78 @@ class MainActivity : AppCompatActivity() {
         Log.d("MainActivity", "onDataReceived: $json")
         // 在主线程更新UI
         handler.post {
-          appendResponseData(json)
+          handleResponseData(json)
         }
       }
     })
+  }
+
+  /**
+   * 处理响应数据（包括状态通知和设备响应）
+   */
+  private fun handleResponseData(json: String) {
+    try {
+      // 解析JSON数据
+      val jsonObject = org.json.JSONObject(json)
+
+      when (jsonObject.optString("type", "")) {
+        "connection" -> {
+          // 处理连接状态通知
+          val event = jsonObject.optString("event", "")
+          val message = jsonObject.optString("message", "")
+          handleConnectionEvent(event, message)
+        }
+
+        else -> {
+          // 处理设备响应数据
+          appendResponseData(json)
+        }
+      }
+    } catch (e: Exception) {
+      // 如果不是JSON格式，直接显示原始数据
+      appendResponseData(json)
+    }
+  }
+
+  /**
+   * 处理连接事件
+   */
+  private fun handleConnectionEvent(event: String, message: String) {
+    Log.d("MainActivity", "连接事件: $event - $message")
+
+    when (event) {
+      LockCtlBoardUtil.TYPE_DETECT_SUCCESSES -> {
+        appendResponseData("✅ 串口检测成功: $message")
+      }
+
+      LockCtlBoardUtil.TYPE_CONNECT_SUCCESSES -> {
+        appendResponseData("✅ 门锁控制板连接成功")
+        updateSerialStatus(true)
+        showToast("门锁控制板已连接，可以开始使用")
+      }
+
+      LockCtlBoardUtil.TYPE_DETECT_FAILED -> {
+        appendResponseData("❌ 串口检测失败: $message")
+        updateSerialStatus(false)
+        showToast("串口检测失败")
+      }
+
+      LockCtlBoardUtil.TYPE_CONNECT_FAILED -> {
+        appendResponseData("❌ 串口连接失败: $message")
+        updateSerialStatus(false)
+        showToast("门锁控制板连接失败")
+      }
+
+      LockCtlBoardUtil.TYPE_CONNECT_CLOSED -> {
+        appendResponseData("ℹ️ 门锁控制板连接已断开")
+        updateSerialStatus(false)
+        showToast("门锁控制板连接已断开")
+      }
+
+      else -> {
+        appendResponseData("ℹ️ $message")
+      }
+    }
   }
 
   private fun setupButtonListeners() {
@@ -79,15 +147,16 @@ class MainActivity : AppCompatActivity() {
       if (isSerialConnected) {
         disconnectSerial()
       } else {
-        // 尝试初始化串口连接
-        initSerialConnection()
+        // 使用简化的初始化接口
+        showToast("正在初始化门锁控制板...")
+        lockCtl.initialize(this)
       }
     }
 
     // 长按强制重新检测串口
     btnConnectSerial.setOnLongClickListener {
-      showToast("正在强制重新检测串口...")
-      forceRedetectAndInitSerial()
+      showToast("正在强制重新初始化...")
+      lockCtl.forceReinitialize(this)
       true
     }
 
@@ -223,71 +292,6 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  /**
-   * 初始化串口连接
-   */
-  private fun initSerialConnection() {
-    if (lockCtl.isInitialized()) {
-      appendResponseData("LockCtlBoardUtil 已初始化，尝试连接串口")
-      try {
-        lockCtl.openSerialPort()
-        handler.postDelayed({
-          updateSerialStatus(true)
-          appendResponseData("串口连接成功")
-          showToast("串口连接成功")
-        }, 1000)
-      } catch (e: Exception) {
-        Log.e("MainActivity", "串口连接失败", e)
-        appendResponseData("串口连接失败: ${e.message}")
-        showToast("串口连接失败: ${e.message}")
-      }
-    } else {
-      appendResponseData("LockCtlBoardUtil 未初始化，开始自动检测并初始化")
-      autoDetectAndInitSerial()
-    }
-  }
-
-  /**
-   * 强制重新检测并初始化串口
-   */
-  private fun forceRedetectAndInitSerial() {
-    appendResponseData("正在强制重新检测串口设备...")
-
-    lockCtl.forceRedetectAndInit(this, object : LockCtlBoardUtil.OnInitListener {
-      override fun onSuccess(message: String) {
-        handler.post {
-          appendResponseData(message)
-          // 初始化成功后尝试连接
-          try {
-            lockCtl.openSerialPort()
-            handler.postDelayed({
-              updateSerialStatus(true)
-              appendResponseData("串口连接成功")
-              showToast("串口连接成功")
-            }, 1000)
-          } catch (e: Exception) {
-            Log.e("MainActivity", "串口连接失败", e)
-            appendResponseData("串口连接失败: ${e.message}")
-            showToast("串口连接失败: ${e.message}")
-          }
-        }
-      }
-
-      override fun onError(error: String) {
-        handler.post {
-          appendResponseData(error)
-          showToast("串口初始化失败: $error")
-        }
-      }
-
-      override fun onProgress(message: String) {
-        handler.post {
-          appendResponseData(message)
-        }
-      }
-    })
-  }
-
   private fun disconnectSerial() {
     lockCtl.closeSerialPort()
     updateSerialStatus(false)
@@ -342,69 +346,22 @@ class MainActivity : AppCompatActivity() {
   }
 
   /**
-   * 自动检测并初始化串口
+   * 自动检测并初始化串口（使用新的简化接口）
    */
   private fun autoDetectAndInitSerial() {
-    // 检查 LockCtlBoardUtil 是否已经初始化
-    if (lockCtl.isInitialized) {
-      Log.d("MainActivity", "LockCtlBoardUtil 已初始化，跳过自动检测")
-      appendResponseData("LockCtlBoardUtil 已初始化")
+    Log.d("MainActivity", "开始自动检测并初始化串口...")
 
-      // 尝试连接串口
-      try {
-        lockCtl.openSerialPort()
-        handler.postDelayed({
-          updateSerialStatus(true)
-          appendResponseData("串口连接成功")
-          showToast("串口连接成功")
-        }, 1000)
-      } catch (e: Exception) {
-        Log.e("MainActivity", "串口连接失败", e)
-        appendResponseData("串口连接失败: ${e.message}")
-        showToast("串口连接失败: ${e.message}")
-      }
+    // 检查是否已经初始化
+    if (lockCtl.isInitialized() && lockCtl.isSerialPortOpen()) {
+      Log.d("MainActivity", "LockCtlBoardUtil 已初始化并连接")
+      updateSerialStatus(true)
+      appendResponseData("✅ 门锁控制板已连接")
       return
     }
 
-    Log.d("MainActivity", "开始自动检测并初始化串口...")
-    appendResponseData("正在自动检测串口设备...")
-
-    // 延迟一小段时间再检测，确保UI完全初始化
-    handler.postDelayed({
-      lockCtl.initWithAutoDetection(this, object : LockCtlBoardUtil.OnInitListener {
-        override fun onSuccess(message: String) {
-          handler.post {
-            appendResponseData(message)
-            // 初始化成功后尝试连接
-            try {
-              lockCtl.openSerialPort()
-              handler.postDelayed({
-                updateSerialStatus(true)
-                appendResponseData("串口连接成功")
-                showToast("串口连接成功")
-              }, 1000)
-            } catch (e: Exception) {
-              Log.e("MainActivity", "串口连接失败", e)
-              appendResponseData("串口连接失败: ${e.message}")
-              showToast("串口连接失败: ${e.message}")
-            }
-          }
-        }
-
-        override fun onError(error: String) {
-          handler.post {
-            appendResponseData(error)
-            showToast("串口初始化失败: $error")
-          }
-        }
-
-        override fun onProgress(message: String) {
-          handler.post {
-            appendResponseData(message)
-          }
-        }
-      })
-    }, 500) // 延迟500ms检测，确保界面完全加载
+    // 使用简化的初始化接口
+    showToast("正在自动初始化门锁控制板...")
+    lockCtl.initialize(this)
   }
 
   override fun onDestroy() {
