@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+
 class MainActivity : AppCompatActivity() {
   private lateinit var lockCtl: LockCtlBoardUtil
   private lateinit var tvSerialStatus: TextView
@@ -44,8 +45,8 @@ class MainActivity : AppCompatActivity() {
     initViews()
     // 设置按钮点击事件
     setupButtonListeners()
-    // 自动连接串口
-    autoConnectSerial()
+    // 自动检测并连接串口
+    autoDetectAndInitSerial()
   }
 
   override fun onResume() {
@@ -78,8 +79,16 @@ class MainActivity : AppCompatActivity() {
       if (isSerialConnected) {
         disconnectSerial()
       } else {
-        connectSerial()
+        // 尝试初始化串口连接
+        initSerialConnection()
       }
+    }
+
+    // 长按强制重新检测串口
+    btnConnectSerial.setOnLongClickListener {
+      showToast("正在强制重新检测串口...")
+      forceRedetectAndInitSerial()
+      true
     }
 
     // 开启全部锁按钮
@@ -214,18 +223,69 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
-  private fun connectSerial() {
-    try {
-      lockCtl.openSerialPort()
-      // 模拟连接成功（实际连接状态会在监听器中更新）
-      handler.postDelayed({
-        updateSerialStatus(true)
-        showToast("串口连接成功")
-      }, 1000)
-    } catch (e: Exception) {
-      Log.e("MainActivity", "串口连接失败", e)
-      showToast("串口连接失败: ${e.message}")
+  /**
+   * 初始化串口连接
+   */
+  private fun initSerialConnection() {
+    if (lockCtl.isInitialized()) {
+      appendResponseData("LockCtlBoardUtil 已初始化，尝试连接串口")
+      try {
+        lockCtl.openSerialPort()
+        handler.postDelayed({
+          updateSerialStatus(true)
+          appendResponseData("串口连接成功")
+          showToast("串口连接成功")
+        }, 1000)
+      } catch (e: Exception) {
+        Log.e("MainActivity", "串口连接失败", e)
+        appendResponseData("串口连接失败: ${e.message}")
+        showToast("串口连接失败: ${e.message}")
+      }
+    } else {
+      appendResponseData("LockCtlBoardUtil 未初始化，开始自动检测并初始化")
+      autoDetectAndInitSerial()
     }
+  }
+
+  /**
+   * 强制重新检测并初始化串口
+   */
+  private fun forceRedetectAndInitSerial() {
+    appendResponseData("正在强制重新检测串口设备...")
+
+    lockCtl.forceRedetectAndInit(this, object : LockCtlBoardUtil.OnInitListener {
+      override fun onSuccess(message: String) {
+        handler.post {
+          appendResponseData(message)
+          // 初始化成功后尝试连接
+          try {
+            lockCtl.openSerialPort()
+            handler.postDelayed({
+              updateSerialStatus(true)
+              appendResponseData("串口连接成功")
+              showToast("串口连接成功")
+            }, 1000)
+          } catch (e: Exception) {
+            Log.e("MainActivity", "串口连接失败", e)
+            appendResponseData("串口连接失败: ${e.message}")
+            showToast("串口连接失败: ${e.message}")
+          }
+        }
+      }
+
+      override fun onError(error: String) {
+        handler.post {
+          appendResponseData(error)
+          showToast("串口初始化失败: $error")
+        }
+      }
+
+      override fun onProgress(message: String) {
+        handler.post {
+          appendResponseData(message)
+        }
+      }
+    })
   }
 
   private fun disconnectSerial() {
@@ -282,36 +342,69 @@ class MainActivity : AppCompatActivity() {
   }
 
   /**
-   * 自动连接串口
+   * 自动检测并初始化串口
    */
-  private fun autoConnectSerial() {
-    // 检查串口是否已经连接
-    if (lockCtl.isSerialPortOpen) {
-      Log.d("MainActivity", "串口已连接，跳过自动连接")
-      updateSerialStatus(true)
-      showToast("串口已连接")
+  private fun autoDetectAndInitSerial() {
+    // 检查 LockCtlBoardUtil 是否已经初始化
+    if (lockCtl.isInitialized) {
+      Log.d("MainActivity", "LockCtlBoardUtil 已初始化，跳过自动检测")
+      appendResponseData("LockCtlBoardUtil 已初始化")
+
+      // 尝试连接串口
+      try {
+        lockCtl.openSerialPort()
+        handler.postDelayed({
+          updateSerialStatus(true)
+          appendResponseData("串口连接成功")
+          showToast("串口连接成功")
+        }, 1000)
+      } catch (e: Exception) {
+        Log.e("MainActivity", "串口连接失败", e)
+        appendResponseData("串口连接失败: ${e.message}")
+        showToast("串口连接失败: ${e.message}")
+      }
       return
     }
 
-    Log.d("MainActivity", "开始自动连接串口...")
-    appendResponseData("正在自动连接串口...")
+    Log.d("MainActivity", "开始自动检测并初始化串口...")
+    appendResponseData("正在自动检测串口设备...")
 
-    // 延迟一小段时间再连接，确保UI完全初始化
+    // 延迟一小段时间再检测，确保UI完全初始化
     handler.postDelayed({
-      try {
-        lockCtl.openSerialPort()
-        // 连接成功后的状态更新（实际连接状态会在监听器中更新）
-        handler.postDelayed({
-          updateSerialStatus(true)
-          appendResponseData("串口自动连接成功")
-          showToast("串口自动连接成功")
-        }, 1000)
-      } catch (e: Exception) {
-        Log.e("MainActivity", "串口自动连接失败", e)
-        appendResponseData("串口自动连接失败: ${e.message}")
-        showToast("串口自动连接失败: ${e.message}")
-      }
-    }, 500) // 延迟500ms连接，确保界面完全加载
+      lockCtl.initWithAutoDetection(this, object : LockCtlBoardUtil.OnInitListener {
+        override fun onSuccess(message: String) {
+          handler.post {
+            appendResponseData(message)
+            // 初始化成功后尝试连接
+            try {
+              lockCtl.openSerialPort()
+              handler.postDelayed({
+                updateSerialStatus(true)
+                appendResponseData("串口连接成功")
+                showToast("串口连接成功")
+              }, 1000)
+            } catch (e: Exception) {
+              Log.e("MainActivity", "串口连接失败", e)
+              appendResponseData("串口连接失败: ${e.message}")
+              showToast("串口连接失败: ${e.message}")
+            }
+          }
+        }
+
+        override fun onError(error: String) {
+          handler.post {
+            appendResponseData(error)
+            showToast("串口初始化失败: $error")
+          }
+        }
+
+        override fun onProgress(message: String) {
+          handler.post {
+            appendResponseData(message)
+          }
+        }
+      })
+    }, 500) // 延迟500ms检测，确保界面完全加载
   }
 
   override fun onDestroy() {

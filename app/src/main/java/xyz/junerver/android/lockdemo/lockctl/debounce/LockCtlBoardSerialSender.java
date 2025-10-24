@@ -41,6 +41,15 @@ public class LockCtlBoardSerialSender implements CommandSender {
     }
 
     /**
+     * 构造函数（指定设备路径，使用默认波特率）
+     *
+     * @param devicePath 设备路径
+     */
+    public LockCtlBoardSerialSender(String devicePath) {
+        this(devicePath, DEFAULT_BAUD_RATE);
+    }
+
+    /**
      * 构造函数
      *
      * @param devicePath 设备路径
